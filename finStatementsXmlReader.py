@@ -19,7 +19,7 @@ ISSUES = "issues"
 
 
 
-tree = ET.parse('items2.xml')
+tree = ET.parse('items_aapl.xml')
 root = tree.getroot()
 
 # for kid in root:
@@ -376,16 +376,12 @@ class finStatementsXmlReader:
     
 
 temp_c = finStatementsXmlReader()
-temp_c.set_xml_master_root("items2.xml")
+temp_c.set_xml_master_root("items_aapl.xml")
 temp_c.prase_data()
 # root = temp_c.xml_master_root
 # for i in root.find("FinancialStatements/InterimPeriods/FiscalPeriod/Statement"):
 #     print(i.tag, i.attrib)
-yealy_kesy = temp_c._INC_K["2020-12-31"].keys()
-q_keys = temp_c._INC_Q["2020-12-31"].keys()
+#yealy_kesy = temp_c._INC_K["2020-12-31"].keys()
+#q_keys = temp_c._INC_Q["2020-12-31"].keys()
 # for i in temp_c._BAL_Q["2020-12-31"].keys():
 #     print(i)
-
-for i in yealy_kesy:
-    # if i not in q_keys:
-        print(i)

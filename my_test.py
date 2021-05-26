@@ -5,7 +5,8 @@ import inspect
 
 import logging
 import time
-import os.path
+import os
+import sys
 
 from ibapi import wrapper
 from ibapi import utils
@@ -36,7 +37,7 @@ class TestClient(EClient):
 class TestWrapper(wrapper.EWrapper):
     def __init__(self):
         wrapper.EWrapper.__init__(self)
-        
+
     def currentTime(self, time:int):
         super().currentTime(time)
         print("CurrentTime:", datetime.datetime.fromtimestamp(time).strftime("%Y%m%d %H:%M:%S"))
@@ -73,17 +74,23 @@ class TestApp(TestWrapper, TestClient):
     def fundamentalData(self, reqId: TickerId, data: str):
         super().fundamentalData(reqId, data)
         # print("FundamentalData. ReqId:", reqId, "Data:", data)
-        print("saving fundamental data")        
+        print("saving fundamental data")
         # mydata = ET.tostring(data)
         myfile = open("items_aapl.xml", "w")
         myfile.write(data)
-        
+
 app = TestApp()
-app.connect(host = "192.168.0.190", port = 7496, clientId = 110)
+
+if (sys.platform == linux):
+    host = "192.168.0.100
+else:
+    host = "192.168.0.190"
+
+app.connect(host = host, port = 7496, clientId = 10)
 if (app.isConnected()):
 
     contract = Contract()
-    contract.symbol = "AAPL"
+    contract.symbol = "MMM"
     contract.exchange = "NYSE"
     contract.secType = "STK"
     print(" ******* Connected *******")
@@ -92,7 +99,7 @@ if (app.isConnected()):
     app.reqFundamentalData(8001, contract, "ReportsFinStatements", [])
 
     app.reqCurrentTime()
-    app.run()   
+    app.run()
     if (app.isConnected()):
         print("Connected")
         app.disconnect()
