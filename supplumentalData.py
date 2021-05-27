@@ -24,7 +24,6 @@ def align_date_format(x : str):
             x = x + "-12-31"
             alinged_date = x
         else:
-            print("date if off format : given date = {}".format(x))
             return None
 
     return alinged_date

@@ -101,12 +101,12 @@ class CompDataAnalysis:
 
     def __init__(self, ticker):
         self.om = om()
-        #try:
-        self.supplumental_data = self.om.get_supplumental_data(ticker = ticker,
-                                                          data_source = "MW",
-                                                          data_type = "pkl")
-        #except:
-         #   pass
+        try:
+            self.supplumental_data = self.om.get_supplumental_data(ticker = ticker,
+                                                              data_source = "MW",
+                                                              data_type = "pkl")
+        except:
+            pass
 
         self.master_data = None
         self.master_K_data = None
@@ -244,7 +244,9 @@ class CompDataAnalysis:
 
 
     def calc_invested_capital(self, analysis_group : dict , method = "direct"):
-        if (method == "direct"):
+        """
+        """
+        if method == "direct":
             invested_capital    = analysis_group["working_capital"] + analysis_group["property/plant/equipment"]
             bv_invested_capital = analysis_group["bv_working_capital"] + analysis_group["property/plant/equipment"]
             return bv_invested_capital, invested_capital

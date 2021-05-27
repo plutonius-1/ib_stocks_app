@@ -34,6 +34,8 @@ class OsManager:
         tickerdir_path = "./" + TICKERS_DIR_NAME + "/" + ticker + "/"
         file_name = ticker +  FILENAME_PREFIXES[data_source]
         file_path = tickerdir_path + file_name + "." + data_type
+        if (ticker not in os.listdir(self.tikcers_dir)):
+            return None
 
         if ((file_name + "." + data_type) not in os.listdir(tickerdir_path)):
             return None
