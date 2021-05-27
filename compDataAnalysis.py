@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 """
 Created on Sun Mar 14 14:09:08 2021
 
@@ -8,6 +9,11 @@ Created on Sun Mar 14 14:09:08 2021
 import xml.etree.ElementTree as ET
 import pandas as pd
 import pickle
+
+from osManager import OsManager as om
+from defs import *
+from supplumentalData import *
+
 
 R_D = 6.5 # TODO
 ASSET_LIFE = 20
@@ -93,7 +99,15 @@ comp_analysis_template = {
 
 class CompDataAnalysis:
 
-    def __init__(self):
+    def __init__(self, ticker):
+        self.om = om()
+        #try:
+        self.supplumental_data = self.om.get_supplumental_data(ticker = ticker,
+                                                          data_source = "MW",
+                                                          data_type = "pkl")
+        #except:
+         #   pass
+
         self.master_data = None
         self.master_K_data = None
         self.master_Q_data = None
@@ -523,7 +537,7 @@ class CompDataAnalysis:
 
 # TODO : STOPING NOW - ADDING MODULE FOR GET A SUPPLUMNETAL DATA FROM MARKET WATCH
 
-temp_c = CompDataAnalysis()
+temp_c = CompDataAnalysis("MMM")
 temp_c.set_master_data("main_data_temp.pkl")
 temp_c.calc_assetst()
 # print(temp_c.K_analysis["roe"])
