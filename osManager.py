@@ -35,10 +35,10 @@ class OsManager:
         file_name = ticker +  FILENAME_PREFIXES[data_source]
         file_path = tickerdir_path + file_name + "." + data_type
         if (ticker not in os.listdir(self.tikcers_dir)):
-            return None
+            return pd.DataFrame()
 
         if ((file_name + "." + data_type) not in os.listdir(tickerdir_path)):
-            return None
+            return pd.DataFrame()
 
         if (data_type == "pkl"):
             return pd.read_pickle(file_path)
@@ -46,7 +46,7 @@ class OsManager:
         if (data_type == "csv"):
             return pd.read_csv(file_path)
 
-        return None
+        return pd.DataFrame()
 
 
     def save_ticker_data(self,
@@ -91,13 +91,12 @@ class OsManager:
         local_data =  self.load_ticker_data(ticker = ticker,
                                  data_source = data_source,
                                  data_type = data_type)
-        print("local data = ", local_data)
-        if (local_data == None):
+        if (local_data.empty == False):
+            data = local_data
+        else:
             print("Downloading {} supplumental data".format(ticker))
             data = sd.get_data(ticker)
             data = pd.DataFrame.from_dict(data)
             self.save_ticker_data(ticker, data_source, data, data_type)
-        else:
-            data = local_data
 
         return data

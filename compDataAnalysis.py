@@ -14,11 +14,16 @@ from osManager import OsManager as om
 from defs import *
 from supplumentalData import *
 
+### THIRD PARTY TAGS IMPORTS ###
+import mw_tags
 
 R_D = 6.5 # TODO
 ASSET_LIFE = 20
 BUISNESS_TAX_RATE = 0.21
-
+STATEMENT_TYPES = ["INC", "BAL", "CAS"]
+Q_data = "Q_data"
+K_data = "K_data"
+STATEMENT_PERIODS = [Q_data, K_data]
 ################
 #### ASSETS ####
 
@@ -101,12 +106,13 @@ class CompDataAnalysis:
 
     def __init__(self, ticker):
         self.om = om()
+        self.ticker = ticker
         try:
             self.supplumental_data = self.om.get_supplumental_data(ticker = ticker,
                                                               data_source = "MW",
                                                               data_type = "pkl")
         except:
-            pass
+            self.supplumental_data = pd.DataFrame()
 
         self.master_data = None
         self.master_K_data = None
@@ -131,7 +137,7 @@ class CompDataAnalysis:
     def set_master_data(self, path_to_dic : str):
         """
         sets the data and the balance, cash, income acording to path_to_dic.
-        dic paramter should be parsed raw data of a company give via IBAPI
+        dic )aramter should be parsed raw data of a company give via IBAPI
         in the shape:
             {INC : {dates:{data}}, BAL : {dates:{data}}, ...}
 
@@ -175,8 +181,67 @@ class CompDataAnalysis:
         return res
 
 
+    def get_supplumental_field(self,
+                               tag_to_find : str,
+                               statement_period : str, # Q_Data/K_data
+                               statement_type : str, #
+                               dates_vector : list):
+
+        if self.supplumental_data.empty:
+            self.supplumental_data = self.om.get_supplumental_data(ticker = self.ticker,
+                                                              data_source = "MW",
+                                                              data_type = "pkl")
+        else:
+            # basic assertions
+            assert statement_type in STATEMENT_TYPES, "statement_type ({}) not in {}".format(statement_type, STATEMENT_TYPES)
+            assert statement_period in STATEMENT_PERIODS
+
+            # get data as dict
+            values = self.supplumental_data[statement_period][statement_type]
+
+            # convert
+            df = pd.DataFrame.from_dict(values)
+
+            #clean df if first columns is just a copy of index
+            if (df.index == df[df.columns[0]]).all():
+                df = df.drop(df.columns[0], axis = 1)
+
+            # get the right tag
+            values = df.loc[tag_to_find]
+            supplumental_dates = values.index
+            for date in dates_vector:
+                assert str(date) in supplumental_dates, "req date : {} \n supplumnetal datas {}".format(date, supplumental_dates)
 
 
+            # convert the series to be in the same multiples as IB (Millions)
+            return self.convertDFmultiples(values)
+        return
+
+    def convertDFmultiples(self,
+                           df : pd.Series):
+        """
+        Here we assume the input df is:
+
+        tag | 2015| 2016 | 2017 ...
+        ----------------------------
+        income : 100M | 200B | 300M ...
+        and we want to convert to IB units (Millions for standart statemets)
+        """
+        LETTERS = ["M","B","T"]
+        cat     = "".join(list(df.values))
+
+        if ("M" in cat):
+            df = df.map(lambda x : float(str(x).replace("M","")))
+        elif ("B" in cat):
+            df = df.map(lambda x : float(x) * 1000)
+        elif ("T" in cat):
+            df = df.map(lambda x : float(x) / 1000)
+
+        return df
+
+    def get_tax_rate(self):
+
+        return
     #### Calculations Functions ####
 
     def calc_working_capital(self,
@@ -398,6 +463,29 @@ class CompDataAnalysis:
         return bv_ROC, ROC
 
 
+    def calc_ROCt(self,
+                  income_statement : dict,
+                  analysis_group : dict):
+        """
+        This calcualation is based on NOPLAT/INVESTED_CAPITAL and should be better than EBIT/INVESTED_CAPITAL
+        BUT - if company was in loss for a period -> we use simple EBIT/INVESTED_CAPITAL
+        """
+
+        inc_df = pd.DataFrame.from_dict(income_statement)
+        operating_income = inc_df.loc["operating income"]
+        roct   = analysis_group["roc"]
+
+        for idx in roct.index:
+            if (operating_income[idx] > 0):
+                roct[idx] = analysis_group["noplat"][idx] / analysis_group["invested_capital"][idx]
+
+        # if (float(inc_df.loc["operating income"]) > 0):
+            # roct = analysis_group["noplat"] / analysis_group["invested_capital"]
+            # return roct
+
+        return roct
+
+
     def calc_ROE(self, income_statement : dict, balance_sheet    : dict):
 
         inc_df = pd.DataFrame.from_dict(income_statement)
@@ -444,29 +532,34 @@ class CompDataAnalysis:
     def calc_NOPLAT(self,
                     analysis_group : dict,
                     income_statement : dict,
+                    period_type : str
                     ):
 
         inc_df = pd.DataFrame.from_dict(income_statement)
+        # ebit includes taxes + intrest payed -> add deprecaation from third party
         ebit = analysis_group["ebit"]
         taxes = inc_df.loc["provision for income taxes"]
-        noplat = ebit - taxes
+        amortization = self.get_supplumental_field(mw_tags.AMORTIZATION, period_type, "CAS", list(taxes.index))
+        noplat = ebit + amortization - taxes
         return noplat
 
     def calc_FCFF(self,
                   analysis_group : dict,
                   income_statement : dict,
-                  cashflow_statement : dict):
+                  cashflow_statement : dict,
+                  period_type : str):
         """
         calc free cash flow for firm
+        @ period_type : str - K_data/Q_data
         """
         inc_df = pd.DataFrame.from_dict(income_statement)
         cf_df  = pd.DataFrame.from_dict(cashflow_statement)
 
-        ebit = analysis_group["ebit"]
-        taxes = inc_df.loc["provision for income taxes"]
-        noplat = ebit - taxes
+        noplat = analysis_group["noplat"]
 
-        depreciation = cf_df.loc["depreciation/depletion"]
+        #depreciation = cf_df.loc["depreciation/depletion"]
+        depreciation = self.get_supplumental_field(mw_tags.DEPRECIATION_DEPLETION_AMORTIZATION, period_type, "CAS", list(noplat.index))
+
         capital_exp  = cf_df.loc["capital expenditures"]
         change_in_working_capital = cf_df.loc["changes in working capital"]
         fcff = noplat + depreciation - capital_exp - change_in_working_capital
@@ -510,9 +603,10 @@ class CompDataAnalysis:
         self.Q_analysis["roa"] = self.calc_ROA(self.Q_analysis, self.BAL)
 
         # DCF Calculations
-        self.Q_analysis["noplat"] = self.calc_NOPLAT(self.Q_analysis, self.INC)
-        self.Q_analysis["fcff"] = self.calc_FCFF(self.Q_analysis, self.INC, self.CAS)
+        self.Q_analysis["noplat"] = self.calc_NOPLAT(self.Q_analysis, self.INC, Q_data)
+        self.Q_analysis["fcff"] = self.calc_FCFF(self.Q_analysis, self.INC, self.CAS, Q_data)
         self.Q_analysis["reinvestment_rate"] = self.calc_reinvestment_rate(self.Q_analysis, self.INC, self.CAS)
+        self.Q_analysis["ROCt"] = self.calc_ROCt(self.INC, self.Q_analysis)
 
         #### Yearly analysis ####
         self.K_analysis["bv_working_capital"] = self.calc_bv_working_capital(self.BAL_K)
@@ -531,10 +625,10 @@ class CompDataAnalysis:
         self.K_analysis["roa"] = self.calc_ROA(self.K_analysis, self.BAL_K)
 
         # DCF Calculations
-        self.K_analysis["noplat"] = self.calc_NOPLAT(self.K_analysis, self.INC_K)
-        self.K_analysis["fcff"] = self.calc_FCFF(self.K_analysis, self.INC_K, self.CAS_K)
+        self.K_analysis["noplat"] = self.calc_NOPLAT(self.K_analysis, self.INC_K, K_data)
+        self.K_analysis["fcff"] = self.calc_FCFF(self.K_analysis, self.INC_K, self.CAS_K, K_data)
         self.K_analysis["reinvestment_rate"] = self.calc_reinvestment_rate(self.K_analysis, self.INC, self.CAS)
-
+        self.K_analysis["ROCt"] = self.calc_ROCt(self.INC_K, self.K_analysis)
         return
 
 # TODO : STOPING NOW - ADDING MODULE FOR GET A SUPPLUMNETAL DATA FROM MARKET WATCH
