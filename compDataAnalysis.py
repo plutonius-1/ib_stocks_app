@@ -8,6 +8,7 @@ Created on Sun Mar 14 14:09:08 2021
 
 import xml.etree.ElementTree as ET
 import pandas as pd
+import numpy as np
 import pickle
 
 from osManager import OsManager as om
@@ -209,8 +210,13 @@ class CompDataAnalysis:
             # get the right tag
             values = df.loc[tag_to_find]
             supplumental_dates = values.index
-            for date in dates_vector:
-                assert str(date) in supplumental_dates, "req date : {} \n supplumnetal datas {}".format(date, supplumental_dates)
+            for date_idx in supplumental_dates:
+                if (date_idx not in dates_vector):
+                    values.drop(date, axis = 0)
+            # for date in dates_vector:
+                # if date not in supplumental_dates:
+                    # values.drop(date, axis = 0)
+                # assert str(date) in supplumental_dates, "req date : {} \n supplumnetal datas {}".format(date, supplumental_dates)
 
 
             # convert the series to be in the same multiples as IB (Millions)
@@ -233,9 +239,9 @@ class CompDataAnalysis:
         if ("M" in cat):
             df = df.map(lambda x : float(str(x).replace("M","")))
         elif ("B" in cat):
-            df = df.map(lambda x : float(x) * 1000)
+            df = df.map(lambda x : float(str(x).replace("B","")) * 1000)
         elif ("T" in cat):
-            df = df.map(lambda x : float(x) / 1000)
+            df = df.map(lambda x : float(str(x).replace("T", "")) / 1000)
 
         return df
 
@@ -535,6 +541,7 @@ class CompDataAnalysis:
                     period_type : str
                     ):
 
+        ## TODO : see "advenced issues in NOPLAT" in 129 and continue to get ADJUSTED NOPLAT
         inc_df = pd.DataFrame.from_dict(income_statement)
         # ebit includes taxes + intrest payed -> add deprecaation from third party
         ebit = analysis_group["ebit"]
@@ -584,6 +591,63 @@ class CompDataAnalysis:
         return rr
 
 
+
+    def calc_operating_cash_tax_rate(self):
+        ## TODO : see page 128
+        return
+    ### INVESTMENTS CALCULATIONS ####
+    # TODO - see page 148 for advenced adjustemnets of company investments
+
+    ### SHORT TERM EXPECTED VALUATION ###
+    # we look at 2 main elements:
+        # 1) the histoy performance of the company
+        # 2) diving into it fundumentals and the enviroment in which it works
+
+    # The main goal in this case is to predict the PREDICTED FREE CASH FLOW for the next couple of years
+    # Generly we assume 2 different EV (entripse "futrue" value) for 2 perios:
+        # LONG term:
+                # EV = FCFF_1 / (WACC-g)
+                # where FCFF_1 is the forcasted FREE CASH FLOW for next period
+                # WACC is the "Weighted Average Cost of Capital"
+                # g - constant growth of cash
+        # SHORT term:
+                # EV = sum_t=1^infty (FCFF_t / (1+WACC)^t)
+    # for the short term we assume that the growth of "g" is not constant, but in the long run it is
+
+    def calc_PV(self,
+                FCFF : pd.Series, # vector of assumed future free cash flow
+                WACC : pd.sereis  # vecotr of assumed future WACC
+                ):
+        assert FCFF.shape == WACC.shape, "FCFF shape : {}, WACC shape {}".format(FCFF.shape, WACC.shape)
+
+        ones_vec = np.ones(FCFF.shape)
+        devisor = ones_vec + WACC
+        for i in range(1, len(devisor) + 1):
+            devisor[i] = devisor[i]**i
+
+        return sum(FCFF / devisor)
+
+    def calc_TM(self,
+                FCFF_n_plus_1 ,
+                WACC,
+                g : float, # constant
+                n : int # "represented year" see page 161
+                ):
+        """
+        @ param n - represented year - see page 161
+        @ param g - constant FCFF growth
+        """
+        terminal_value = ((FCFF_n_plus_1) / (WACC - g) ) / (1+WACC)**n
+        return terminal_value
+
+
+    def calc_EV(self,
+                PV,
+                TM):
+        ev = PV + TM
+        return
+
+
     ### Mains ####
     def calc_assetst(self):
 
@@ -606,7 +670,7 @@ class CompDataAnalysis:
         self.Q_analysis["noplat"] = self.calc_NOPLAT(self.Q_analysis, self.INC, Q_data)
         self.Q_analysis["fcff"] = self.calc_FCFF(self.Q_analysis, self.INC, self.CAS, Q_data)
         self.Q_analysis["reinvestment_rate"] = self.calc_reinvestment_rate(self.Q_analysis, self.INC, self.CAS)
-        self.Q_analysis["ROCt"] = self.calc_ROCt(self.INC, self.Q_analysis)
+        self.Q_analysis["roct"] = self.calc_ROCt(self.INC, self.Q_analysis)
 
         #### Yearly analysis ####
         self.K_analysis["bv_working_capital"] = self.calc_bv_working_capital(self.BAL_K)
@@ -628,7 +692,7 @@ class CompDataAnalysis:
         self.K_analysis["noplat"] = self.calc_NOPLAT(self.K_analysis, self.INC_K, K_data)
         self.K_analysis["fcff"] = self.calc_FCFF(self.K_analysis, self.INC_K, self.CAS_K, K_data)
         self.K_analysis["reinvestment_rate"] = self.calc_reinvestment_rate(self.K_analysis, self.INC, self.CAS)
-        self.K_analysis["ROCt"] = self.calc_ROCt(self.INC_K, self.K_analysis)
+        self.K_analysis["roct"] = self.calc_ROCt(self.INC_K, self.K_analysis)
         return
 
 # TODO : STOPING NOW - ADDING MODULE FOR GET A SUPPLUMNETAL DATA FROM MARKET WATCH

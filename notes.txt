@@ -1,0 +1,18 @@
+VALUATIOS:
+    * Generally we can say that for big companies, historical revnues growth is indicative of       future revneues growth.
+    * On the other hand, for smaller companies, reveune growth can be drastic over the next fe      few years, and thus not indicative of future growth.
+    ! - should i look more at smaller companies to make more money? probaby not - should look       for undervalued bigger companies, and fast growing small comapnies :-)
+
+    IMPORTANT - i have to consider the market in which a company is a part of.
+
+PREDICTING REVENUES:
+
+    generally there are 2 ways to predicts future revenus:
+        1) TOP down - see what the market size is, and what is the market share of the compny            were looking at - good for low volatilty markets and big companies
+        2) Bottom up looking at commpany fundulemtals and existsing clients, and expecet the growth of new clients. - better for smaller companies or new markets
+
+    # TODO - use sec insider trading stuff
+
+
+        
+
