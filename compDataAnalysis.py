@@ -246,8 +246,15 @@ class CompDataAnalysis:
         return df
 
     def get_tax_rate(self):
-
+        # TODO
         return
+
+    def get_sics(self):
+        # TODO have a big CFG file to get all const/paths from
+        return
+
+
+
     #### Calculations Functions ####
 
     def calc_working_capital(self,
