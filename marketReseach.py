@@ -21,7 +21,7 @@ SIC_DICIONARY_PATH = "./SICS/dictionary.pkl"
 
 
 class MarketReasercher:
-    def __init__(self):
+    def __init__(self, **kwargs):
 
         # initilize os manager
         self.om = Om()
@@ -99,7 +99,7 @@ class MarketReasercher:
                     companies_table = pd.read_html(resp.content)[0]
                     start += 100
                    sdk;lakd;lask;l  ## TODO - since Market watch dont have all acompanies - look to get all companies data via IB or Morning star
-                                    ## TODO - also, use marketwatch all for comapnies we see on "competitors" on MW
+                                    ## TODO - also, use marketwatch all for comapnies we see on
                     resp = self.assert_table_in_response(INDUSTRIES_URL.format(str(code), str(start)))
 
 

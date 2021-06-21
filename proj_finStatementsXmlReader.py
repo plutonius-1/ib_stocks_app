@@ -233,6 +233,7 @@ class finStatementsXmlReader:
 
     def get_fundamentals_obj(self):
         return self.parse_data()
+
     def get_ticker(self, xml_root):
         try:
             ticker = xml_root.find("./Issues/Issue/IssueID[@Type='Ticker']").text

@@ -15,4 +15,11 @@ PREDICTING REVENUES:
 
 
         
+##### FILES AND FLOW #### 
+
+* IbTWS_c.py - general API connection and API access
+* compDataAnalysis.py - main company analysis class (via book formulas)
+* finStatementsXmlReader - converts the financial statemts recived from IB to workable pickle
+* marketResearch - should manage market reaserch for a comapny - getting the SICS and comparing marketcap etc...
+* osManager - mange the connection and saving/loading of stuff from OS
 

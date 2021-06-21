@@ -1,0 +1,209 @@
+import cfg
+from cfg import pd
+import datetime
+from uuid import uuid1
+from ibapi import wrapper
+from ibapi import utils
+from ibapi.client import EClient
+from ibapi.utils import iswrapper
+from ibapi.common import * # @UnusedWildImport
+from ibapi.order_condition import * # @UnusedWildImport
+from ibapi.contract import * # @UnusedWildImport
+from ibapi.order import * # @UnusedWildImport
+from ibapi.order_state import * # @UnusedWildImport
+from ibapi.execution import Execution
+from ibapi.execution import ExecutionFilter
+from ibapi.commission_report import CommissionReport
+from ibapi.ticktype import * # @UnusedWildImport
+from ibapi.tag_value import TagValue
+
+from ibapi.account_summary_tags import *
+
+class TestClient(EClient):
+    def __init__(self, wrapper):
+        EClient.__init__(self, wrapper)
+
+
+class TestWrapper(wrapper.EWrapper):
+    def __init__(self):
+        wrapper.EWrapper.__init__(self)
+
+    def currentTime(self, time:int):
+        super().currentTime(time)
+        print("CurrentTime:", datetime.datetime.fromtimestamp(time).strftime("%Y%m%d %H:%M:%S"))
+
+class IBreq:
+    """
+    Holds a general data of a request from IB
+    """
+    def __init__(self,
+                 reqId : int,
+                 reqType : str,
+                 symbol = None,
+                 contract = None):
+        self.reqId = reqId
+        self.symbol = symbol
+        self.contract = contract
+        self.reqType = reqType
+
+    def __str__(self):
+        return "IBreq Object ** reqId : {}, symbol : {}, reqType : {}".format(self.reqId, self.symbol, self.reqType)
+
+######### Consts End ########
+# where to save data from IB based on its type
+generalReqTypeDict = {
+    "financials" : cfg.IB_FINANCIALS_PATH
+}
+
+# if requests was financial, get the postfix based on the type of request: ticker_postfix
+fundReqTypesDict = {
+    "ReportsFinStatements" : "financial_statements.xml",
+    "ReportSnapshot"       : "snapshot.xml",
+    "ReportsFinSummary"    : "financial_summary.xml",
+    "RESC"                 : "analysts.xml"
+}
+
+class IbTws(TestWrapper,
+            TestClient):
+
+    def __init__(self, **kwargs):
+        TestWrapper.__init__(self)
+        TestClient.__init__(self, wrapper = self)
+
+        # local consts
+        self.TICKER_KEY = "ticker"
+        self.HOST_KEY   = "host"
+        self.PORT_KEY   = "port"
+        self.CLIENT_ID  = "clientId"
+
+
+        # self.function = function
+        self.outGoingRequests = {}
+        self.kwargs = kwargs
+        self.host = kwargs[self.HOST_KEY]
+        self.port = kwargs[self.PORT_KEY]
+        self.clientId = kwargs[self.CLIENT_ID]
+
+        # some init assertions ##
+        assert self.function != None
+        assert self.function in cfg.IBTWS_FUNCTIONS
+        # connetion assertion
+        assert self.connectToTWS(self.host, self.port, self.clientId), "*** Exit: TWS not connected ***"
+
+    ### Error Handling ###
+    def error(self, reqId: TickerId, errorCode: int, errorString: str):
+            super().error(reqId, errorCode, errorString)
+            print("Error. Id:", reqId, "Code:", errorCode, "Msg:", errorString)
+
+    ### reqId Handlers ###
+    def makeUUID(self):
+        return int(uuid1())
+
+    def reqCallBackHandler(self, reqId):
+        key = str(int(reqId))
+        if key in self.outGoingRequests:
+            del self.outGoingRequests[key]
+        return
+
+    def reqIdRegister(self, reqId , reqType : str, symbol : str):
+        key = str(int(reqId))
+        assert key not in self.outGoingRequests, "a new request was made while reqId {} did not return".format(reqId)
+        reqIdObj = IBreq(reqId, reqType, symbol)
+        self.outGoingRequests.update({key : reqIdObj})
+    ######################
+
+
+    def call_function(self, function, **kwargs):
+        if (function == cfg.GET_FUNDUMENTALS):
+            try:
+                ticker = self.kwargs[self.TICKER_KEY]
+            except:
+                ticker = kwargs[self.TICKER_KEY]
+
+            contract = self.make_us_stk_contract(ticker)
+            reqIds = [self.makeUUID() for i in range(4)]
+            self.reqFundamentalData(reqIds[0], contract, "ReportsFinStatements", [])
+            self.reqFundamentalData(reqIds[1], contract, "ReportSnapshot", [])
+            self.reqFundamentalData(reqIds[2], contract, "ReportsFinSummary", [])
+            self.reqFundamentalData(reqIds[3], contract, "RESC",[])
+        else:
+            pass
+
+
+
+    ################### OVERRIDES ###################
+    ### fundumentals overrides ###
+    def reqFundamentalData(self,
+                           reqId : int,
+                           contract : Contract,
+                           reportType : str,
+                           fundamentalDataOptions : list
+                           ):
+        super().reqFundamentalData(reqId, contract, reportType, fundamentalDataOptions)
+        print("Requesting :{} Fundumental data type :{}".format(contract.symbol, reportType))
+        self.reqIdRegister(reqId, reportType, symbol = contract.symbol)
+
+    def fundamentalData(self, reqId: TickerId, data: str):
+        super().fundamentalData(reqId, data)
+        self.save_general_file(reqId = reqId,
+                               type_to_save = cfg.FINANCIALS,
+                               data = data)
+    ################################# End fundamentals overrides
+
+
+    ################### UTILS ###################
+    def save_general_file(self,
+                          reqId,
+                          type_to_save : str,
+                          data):
+        """
+        @ param - reqId
+        @ param - type_to_save: in which dir to save data based on request type (see generalReqTypeDict for options
+        """
+        # convert the reqId to str - Note key should be strings
+        reqIdKey = str(int(reqId))
+        assert reqIdKey in self.outGoingRequests, "ERROR: reqId: {} not in outGoingRequests".format(reqIdKey)
+
+        # get the req object
+        reqIdObj = self.outGoingRequests[reqIdKey]
+        reqType = reqIdObj.reqType
+        symbol  = reqIdObj.symbol
+
+        # get the right postfix
+        if (type_to_save == cfg.FINANCIALS):
+            reqType = fundReqTypesDict[reqType]
+
+        print("*** Saving ", reqIdObj, " ***")
+        filename = symbol + "_" + reqType
+
+        # get the path to save the file to
+        path_to_save = generalReqTypeDict[type_to_save]
+
+        # save
+        f = open(path_to_save + filename, "w")
+        f.write(data)
+        f.close()
+
+        # delete from reqIds bank
+        self.reqCallBackHandler(reqIdKey)
+
+    def connectToTWS(self, host : str, port : str, clientId : int):
+        try:
+            self.connect(host, port, clientId)
+        except:
+            pass
+
+        if not self.isConnected():
+            print("IbTws_c is not connected")
+            return False
+        return True
+
+    def make_us_stk_contract(self, ticker : str):
+        ticker = (str(ticker)).upper()
+        contract = Contract()
+        contract.symbol = ticker
+        contract.exchange = "NYSE"
+        contract.secType = "STK"
+        return contract
+
+
