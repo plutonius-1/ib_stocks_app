@@ -81,8 +81,8 @@ class TestApp(TestWrapper, TestClient):
 
 app = TestApp()
 
-if (sys.platform == linux):
-    host = "192.168.0.100
+if (sys.platform == "linux"):
+    host = "192.168.0.100"
 else:
     host = "192.168.0.190"
 
@@ -90,7 +90,7 @@ app.connect(host = host, port = 7496, clientId = 10)
 if (app.isConnected()):
 
     contract = Contract()
-    contract.symbol = "MMM"
+    contract.symbol = "TPB"
     contract.exchange = "NYSE"
     contract.secType = "STK"
     print(" ******* Connected *******")

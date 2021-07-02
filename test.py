@@ -21,20 +21,28 @@ def calc(df : pd.DataFrame):
 
     ser = ser[::-1]
     dic = {}
-    
+
     div = len(ser)
-    
+
     for idx in range(len(ser)):
         current_rnd_asset = 0.0
         for i in range(idx + 1):
             div = idx + 1
             current_rnd_asset += ser[i] * (i+1)/div
-        dic.update({ser.index[idx]:current_rnd_asset})    
-    
+        dic.update({ser.index[idx]:current_rnd_asset})
+
     res = pd.Series(dic)
     res = res[::-1]
-    
+
     return res
 
+def func(d : dict):
+    keys = ["A","B","C"]
 
-calc(df1)
+    for k in keys:
+        try: print("data is: ", d[k])
+        except Exception as e:
+            print(e)
+dic = {"A":1}
+func(dic)
+

@@ -17,3 +17,6 @@ build
 *.ini
 .spyproject/*
 Tickers/*
+SICS/*
+ib_data/*
+data/*

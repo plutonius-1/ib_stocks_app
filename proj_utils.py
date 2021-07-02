@@ -25,8 +25,15 @@ def get_and_varify_page(self,
 # return
 
 def check_dir_exists(path : str):
-    if (os.path.exists(path) is False):
-        os.mkdir(path)
+    splt = path.split("/") # [".', "abc" , "de"]
+    idx = 1
+    while (idx != len(splt) + 1):
+        temp_path = "/".join(splt[:idx])
+        print(temp_path)
+        if (os.path.exists(temp_path) is False):
+            os.mkdir(temp_path)
+        idx += 1
+
     return True
 
 def get_xml_elem(xml_file_path : str,
@@ -36,4 +43,33 @@ def get_xml_elem(xml_file_path : str,
     root = tree.getroot()
     elem = root.find(dir_path_in_file)
     return elem
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+def print_warning_msg(msg : str):
+    print(bcolors.WARNING + msg + bcolors.ENDC)
+
+def print_sleep_msg(timeout = 0, msg = ""):
+    while (timeout > 0):
+        print(bcolors.OKGREEN + msg + ": sleeping for {}".format(timeout) + bcolors.ENDC)
+        cfg.time.sleep(1)
+        timeout -= 1
+    return None
+
+def _finditem(obj, key):
+    if key in obj: return obj[key]
+    for k, v in obj.items():
+        if isinstance(v,dict):
+            item = _finditem(v, key)
+            if item is not None:
+                return item
 

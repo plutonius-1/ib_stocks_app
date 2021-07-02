@@ -52,13 +52,24 @@ class snapshotXmlReader_c:
             ratios_dict.update(group_dict)
         return ratios_dict
 
+    def get_snapshot_obj(self):
+        try:
+            sics = self.get_sics()
+            ratios = self.get_ratios()
+
+            data = {"SICS":sics,
+                    "RATIOS":ratios}
+        except:
+            data = None
+        return data
+
     ### SETS ###
     def set_ticker(self, ticker):
         self.ticker = ticker
         self.snapshot_path = cfg.IB_FINANCIALS_PATH + self.ticker + "_snapshot.xml"
 
 
-c = snapshotXmlReader_c()
-c.set_ticker("MMM")
-print(c.get_sics())
-print(c.get_ratios())
+# c = snapshotXmlReader_c()
+# c.set_ticker("MMM")
+# print(c.get_sics())
+# print(c.get_ratios())

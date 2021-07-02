@@ -18,6 +18,7 @@ from ibapi.ticktype import * # @UnusedWildImport
 from ibapi.tag_value import TagValue
 
 from ibapi.account_summary_tags import *
+import proj_req_id_handler_c
 
 class TestClient(EClient):
     def __init__(self, wrapper):
@@ -69,6 +70,7 @@ class IbTws(TestWrapper,
     def __init__(self, **kwargs):
         TestWrapper.__init__(self)
         TestClient.__init__(self, wrapper = self)
+        self.id_handler = proj_req_id_handler_c.Req_id_handler_c()
 
         # local consts
         self.TICKER_KEY = "ticker"
@@ -85,10 +87,13 @@ class IbTws(TestWrapper,
         self.clientId = kwargs[self.CLIENT_ID]
 
         # some init assertions ##
-        assert self.function != None
-        assert self.function in cfg.IBTWS_FUNCTIONS
+        # assert self.function != None
+        # assert self.function in cfg.IBTWS_FUNCTIONS
         # connetion assertion
         assert self.connectToTWS(self.host, self.port, self.clientId), "*** Exit: TWS not connected ***"
+
+    def _run_(self):
+        self.run()
 
     ### Error Handling ###
     def error(self, reqId: TickerId, errorCode: int, errorString: str):
@@ -122,12 +127,14 @@ class IbTws(TestWrapper,
 
             contract = self.make_us_stk_contract(ticker)
             reqIds = [self.makeUUID() for i in range(4)]
+            reqIds = [self.id_handler.register_outgoing_req() for i in range(4)]
             self.reqFundamentalData(reqIds[0], contract, "ReportsFinStatements", [])
             self.reqFundamentalData(reqIds[1], contract, "ReportSnapshot", [])
             self.reqFundamentalData(reqIds[2], contract, "ReportsFinSummary", [])
             self.reqFundamentalData(reqIds[3], contract, "RESC",[])
         else:
             pass
+
 
 
 
@@ -179,6 +186,9 @@ class IbTws(TestWrapper,
         # get the path to save the file to
         path_to_save = generalReqTypeDict[type_to_save]
 
+        # make sure dir exists
+        proj_utils.check_dir_exists(path_to_save)
+
         # save
         f = open(path_to_save + filename, "w")
         f.write(data)
@@ -186,6 +196,7 @@ class IbTws(TestWrapper,
 
         # delete from reqIds bank
         self.reqCallBackHandler(reqIdKey)
+        self.id_handler.response_id(reqId)
 
     def connectToTWS(self, host : str, port : str, clientId : int):
         try:
@@ -202,8 +213,7 @@ class IbTws(TestWrapper,
         ticker = (str(ticker)).upper()
         contract = Contract()
         contract.symbol = ticker
-        contract.exchange = "NYSE"
+        contract.exchange = "SMART"
         contract.secType = "STK"
         return contract
-
 
