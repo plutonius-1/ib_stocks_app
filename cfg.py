@@ -8,9 +8,13 @@ import pickle
 ### GENERAL KEYWORDS ###
 
 FINANCIALS = "financials"
+HOST = "host"
+PORT = "port"
+CLIENTID = "clientId"
 
 ### PATHS ###
 DATA_PATH           = "./data/"
+
 RAW_DATA_PATH       = DATA_PATH + "raw_data/"
 PROCESSED_DATA_PATH = DATA_PATH + "processed_raw_data/"
 COMPANY_ANALYSIS_PATH = DATA_PATH + "companies_analysis/"
@@ -19,8 +23,8 @@ DEEP_COMPERATIVE_PATH = DATA_PATH + "deep_comperative_analysis/"
 BASIC_APP_STURCTURE_DIRS = [RAW_DATA_PATH, PROCESSED_DATA_PATH, COMPANY_ANALYSIS_PATH, MARKET_RESEARCH_PATH, DEEP_COMPERATIVE_PATH]
 
 
-IB_DATA_PATH       = DATA_PATH + "ib_data/"
-IB_FINANCIALS_PATH = DATA_PATH + IB_DATA_PATH + FINANCIALS
+IB_DATA_PATH       = RAW_DATA_PATH + "ib_data/"
+IB_FINANCIALS_PATH = IB_DATA_PATH
 
     # SICs
 SIC_CODES_PATH = "./SICS/sic_codes.pkl"
@@ -36,6 +40,15 @@ IBTWS_FUNCTIONS = [GET_FUNDUMENTALS]
 #################
 
 ### PROCESSED XML FILES POSTFIX ###
+FUND_REQ_TYPES_DICT = {
+    "ReportsFinStatements" : "financial_statements.xml",
+    "ReportSnapshot"       : "snapshot.xml",
+    "ReportsFinSummary"    : "financial_summary.xml",
+    "RESC"                 : "analysts.xml"
+}
+
+
+
 PROCESSED_FUNDAMENTAL_XML = "_processed_fundamental"
 PROCESSED_SNAPSHOT_XML    = "_processed_snapshot"
 PROCESSED_FINSUMMERY_XML  = "_processed_finsummery"

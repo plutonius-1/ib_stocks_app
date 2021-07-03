@@ -27,14 +27,20 @@ def get_and_varify_page(self,
 def check_dir_exists(path : str):
     splt = path.split("/") # [".', "abc" , "de"]
     idx = 1
+    if (os.path.exists(path)):
+        return True
+
     while (idx != len(splt) + 1):
         temp_path = "/".join(splt[:idx])
-        print(temp_path)
         if (os.path.exists(temp_path) is False):
             os.mkdir(temp_path)
         idx += 1
 
     return True
+
+def check_file_exist(path : str):
+    if os.path.exists(path): return True
+    else: return False
 
 def get_xml_elem(xml_file_path : str,
                  dir_path_in_file : str):
@@ -73,3 +79,5 @@ def _finditem(obj, key):
             if item is not None:
                 return item
 
+def get_date():
+    return

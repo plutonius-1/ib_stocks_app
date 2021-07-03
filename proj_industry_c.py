@@ -59,8 +59,9 @@ class Industry_c:
     def __init__(self, industry_name, SIC):
         self.industry_name = industry_name
         self.SIC           = SIC
-        self.tickers = {}
+        self.tickers        = {}
         self.industry_data  = {}
+        self.last_update    = None
 
     def add_ticker_data(self, ticker, ticker_data):
         ticker_d = Ticker_data_c()
@@ -93,7 +94,9 @@ class Industry_c:
 
 
 
-    def _remove_tickers_data_from_industry_data(self, ticker, new_ticker_obj : Ticker_data_c):
+    def _remove_tickers_data_from_industry_data(self, new_ticker_obj : Ticker_data_c):
+        ticker = new_ticker_obj.get_ticker()
+
         # first get old tickers data and compare to new data
         old_ticker_obj = self.industry_data[ticker]
 
@@ -106,7 +109,7 @@ class Industry_c:
 
                 # get the func to do base on data name ("MKCAP, EV...")
 
-                func_to_perform = self._get_add_remove_function("REMOVE", data_mame)
+                func_to_perform = self._get_add_remove_function("REMOVE", data_name)
                 val_to_remove   = float(val)
 
                 current_industry_val = float(self.industry_data[data_name])

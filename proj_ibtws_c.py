@@ -19,6 +19,7 @@ from ibapi.tag_value import TagValue
 
 from ibapi.account_summary_tags import *
 import proj_req_id_handler_c
+import proj_utils
 
 class TestClient(EClient):
     def __init__(self, wrapper):
@@ -127,7 +128,7 @@ class IbTws(TestWrapper,
                 ticker = kwargs[self.TICKER_KEY]
 
             contract = self.make_us_stk_contract(ticker)
-            reqIds = [self.makeUUID() for i in range(4)]
+            # reqIds = [self.makeUUID() for i in range(4)]
             reqIds = [self.id_handler.register_outgoing_req() for i in range(4)]
             self.reqFundamentalData(reqIds[0], contract, "ReportsFinStatements", [])
             self.reqFundamentalData(reqIds[1], contract, "ReportSnapshot", [])
@@ -185,7 +186,7 @@ class IbTws(TestWrapper,
         filename = symbol + "_" + reqType
 
         # get the path to save the file to
-        path_to_save = generalReqTypeDict[type_to_save]
+        path_to_save = generalReqTypeDict[type_to_save] + symbol.upper() + "/"
 
         # make sure dir exists
         proj_utils.check_dir_exists(path_to_save)
@@ -214,6 +215,7 @@ class IbTws(TestWrapper,
         ticker = (str(ticker)).upper()
         contract = Contract()
         contract.symbol = ticker
+        contract.currency = "USD"
         contract.exchange = "SMART"
         contract.secType = "STK"
         return contract

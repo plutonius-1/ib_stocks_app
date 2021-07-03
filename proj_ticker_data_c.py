@@ -8,6 +8,7 @@ class Ticker_data_c:
         self._raw_data        = {}
         self._analyzed_data   = {}
         self._in_industry_avg = {}
+        self._last_update     = None
 
     def _analyze_data(self, raw_data):
         analyzed_data = {}
@@ -15,11 +16,15 @@ class Ticker_data_c:
             try:
                 val = proj_utils._finditem(raw_data, tag)
                 if (val == None):
-                    print(bcolors.WARNING + "Did not find {} in {} data - addding None".format(tag, ticker) + bcolors.ENDC)
+                    print(bcolors.WARNING + "Did not find {} in data - addding None".format(tag) + bcolors.ENDC)
                 analyzed_data.update({tag : val})
             except:
                 pass
         return analyzed_data
+
+    #### SETS ####
+    def set_last_update(self):
+        pass
 
     def set_ticker(self, ticker):
         self._ticker = ticker
@@ -34,6 +39,7 @@ class Ticker_data_c:
     def add_data_to_analyzed_data(self, tag, val):
         self._analyzed_data.update({tag : val})
 
+    #### GETS ####
     def get_ticker(self):
         return self._ticker
 
@@ -51,9 +57,9 @@ class Ticker_data_c:
                 self._in_industry_avg ))
 
     def __eq__(self, other):
-        if (self.ticker != other.ticker or
-            self.raw_data != other.raw_data or
-            self.analyzed_data != other.analyzed_data):
+        if (self._ticker != other.ticker or
+            self._raw_data != other.raw_data or
+            self._analyzed_data != other.analyzed_data):
             return False
         return True
 

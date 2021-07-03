@@ -1,4 +1,5 @@
 import threading
+import proj_marketReaseach
 import cfg
 import proj_utils
 import proj_sec_scraping_utils
@@ -179,12 +180,11 @@ class Sics_handler_c:
         """
         Updates the local dictionary of sic codes and thier name
         """
-        import proj_marketReaseach
         mr = proj_marketReaseach.MarketReasercher()
         mr.update_sic_codes()
         return
 #############################
-import IbTWS_c
+# import IbTWS_c
 
 # host1 = "192.168.0.100"
 # dunbros = "10.10.4.107"
