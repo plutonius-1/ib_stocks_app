@@ -80,4 +80,9 @@ def _finditem(obj, key):
                 return item
 
 def get_date():
+    local_time_obj = cfg.time.localtime()
+    y = local_time_obj.tm_year
+    m = local_time_obj.tm_mon
+    d = local_time_obj.tm_mday
+
     return
