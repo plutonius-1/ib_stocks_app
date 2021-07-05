@@ -1,2 +1,3 @@
-* deal with interrupts in IB connection (or general internet connection):
-* finish get_date() in proj_utils
+cont: from proj_main process_ib_raw_data
+
+*deal with interrupts in IB connection (or general internet connection):

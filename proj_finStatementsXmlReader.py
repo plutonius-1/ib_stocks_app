@@ -39,7 +39,7 @@ class finStatementsXmlReader_c:
 
     def set_ticker(self, ticker):
         self.ticker = ticker
-        self.set_xml_master_root(cfg.IB_FINANCIALS_PATH + self.ticker + "_financial_statements.xml")
+        self.set_xml_master_root(cfg.IB_DATA_PATH + "/" + self.ticker.upper() + "/" + self.ticker + "_financial_statements.xml")
 
     def get_balance_sheet(self):
         return self.BAL
@@ -60,14 +60,15 @@ class finStatementsXmlReader_c:
             self._BAL_K = K_data["BAL"]
             self._CAS_K = K_data["CAS"]
             self._INC_K = K_data["INC"]
-            data = {"Q_data":Q_data, "K_data":K_data}
+            data = {"Q_data":Q_data, "K_data":K_data, }
             name = self.get_ticker(self.xml_master_root).upper()
             name = name + cfg.PROCESSED_FUNDAMENTAL_XML
-            path = cfg.IB_FINANCIALS_PATH +
-            self.save_obj(data, path + name) # saves as pkl
+            path = cfg.PROCESSED_DATA_PATH + self.ticker.upper() + "/"
+            proj_utils.check_dir_exists(path)
+            self.isave_obj(data, path + name) # saves as pkl
             return data
         except:
-            return None
+            return {}
 
     def save_obj(self, obj, name ):
         with open(name + '.pkl', 'wb') as f:

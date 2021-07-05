@@ -44,7 +44,10 @@ def check_file_exist(path : str):
 
 def get_xml_elem(xml_file_path : str,
                  dir_path_in_file : str):
-    assert cfg.os.path.exists(xml_file_path), "file {} does not exists".format(xml_file_path)
+    # assert cfg.os.path.exists(xml_file_path), "file {} does not exists".format(xml_file_path)
+    if not cfg.os.path.exists(xml_file_path):
+        print_warning_msg("WARNING: file {} does not exists - returning None".format(xml_file_path))
+        return None
     tree = ET.parse(xml_file_path)
     root = tree.getroot()
     elem = root.find(dir_path_in_file)

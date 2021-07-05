@@ -1,4 +1,5 @@
 import xml.etree.ElementTree as ET
+import re
 import requests
 import os
 import pandas as pd
@@ -11,6 +12,7 @@ FINANCIALS = "financials"
 HOST = "host"
 PORT = "port"
 CLIENTID = "clientId"
+LAST_UPDATED = "last_updated"
 
 ### PATHS ###
 DATA_PATH           = "./data/"
@@ -20,12 +22,13 @@ PROCESSED_DATA_PATH = DATA_PATH + "processed_raw_data/"
 COMPANY_ANALYSIS_PATH = DATA_PATH + "companies_analysis/"
 MARKET_RESEARCH_PATH  = DATA_PATH + "market_research/"
 DEEP_COMPERATIVE_PATH = DATA_PATH + "deep_comperative_analysis/"
-BASIC_APP_STURCTURE_DIRS = [RAW_DATA_PATH, PROCESSED_DATA_PATH, COMPANY_ANALYSIS_PATH, MARKET_RESEARCH_PATH, DEEP_COMPERATIVE_PATH]
 
 
 IB_DATA_PATH       = RAW_DATA_PATH + "ib_data/"
+IB_PROCESSED_PATH  = PROCESSED_DATA_PATH + "ib_data/"
 IB_FINANCIALS_PATH = IB_DATA_PATH
 
+BASIC_APP_STURCTURE_DIRS = [RAW_DATA_PATH, PROCESSED_DATA_PATH, COMPANY_ANALYSIS_PATH, MARKET_RESEARCH_PATH, DEEP_COMPERATIVE_PATH, IB_DATA_PATH, IB_PROCESSED_PATH]
     # SICs
 SIC_CODES_PATH = "./SICS/sic_codes.pkl"
 SIC_DICIONARY_PATH = "./SICS/dictionary.pkl"
@@ -86,3 +89,7 @@ MKTSHARE     = "MKTSHARE"
 
 ## GENERAL CONSTS ##
 ANALYZE = "analyze"
+
+### DATE FORMAT ###
+RE_DATE_FORMAT = r'\d{4}-\d{2}-\d{2}'
+re_date_format = re.compile(RE_DATE_FORMAT)

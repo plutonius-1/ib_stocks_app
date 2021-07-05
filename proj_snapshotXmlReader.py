@@ -53,20 +53,28 @@ class snapshotXmlReader_c:
         return ratios_dict
 
     def get_snapshot_obj(self):
-        try:
-            sics = self.get_sics()
-            ratios = self.get_ratios()
 
-            data = {"SICS":sics,
-                    "RATIOS":ratios}
-        except:
-            data = None
+        sics = self.get_sics()
+        ratios = self.get_ratios()
+
+        data = {"SICS":sics,
+                "RATIOS":ratios}
+
+        path = cfg.IB_PROCESSED_PATH + "/" + self.ticker.upper()
+        name = self.ticker.upper() + cfg.PROCESSED_SNAPSHOT_XML
+        self.save_data_obj(data, path, name)
         return data
+
+    def save_data_obj(self, obj, path, name):
+        proj_utils.check_dir_exists(path)
+        name = path + "/" + name
+        with open(name + ".pkl", "wb") as f:
+            pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
 
     ### SETS ###
     def set_ticker(self, ticker):
         self.ticker = ticker
-        self.snapshot_path = cfg.IB_FINANCIALS_PATH + self.ticker + "_snapshot.xml"
+        self.snapshot_path = cfg.IB_DATA_PATH + "/{}/{}".format(self.ticker,self.ticker)+"_snapshot.xml"
 
 
 # c = snapshotXmlReader_c()
