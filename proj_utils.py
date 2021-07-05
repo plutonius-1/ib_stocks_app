@@ -85,4 +85,4 @@ def get_date():
     m = local_time_obj.tm_mon
     d = local_time_obj.tm_mday
 
-    return
+    return str(y+"-"+m+"-"+d)

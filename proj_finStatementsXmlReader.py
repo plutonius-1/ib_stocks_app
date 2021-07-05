@@ -63,7 +63,7 @@ class finStatementsXmlReader_c:
             data = {"Q_data":Q_data, "K_data":K_data}
             name = self.get_ticker(self.xml_master_root).upper()
             name = name + cfg.PROCESSED_FUNDAMENTAL_XML
-            path = cfg.IB_FINANCIALS_PATH
+            path = cfg.IB_FINANCIALS_PATH +
             self.save_obj(data, path + name) # saves as pkl
             return data
         except:
