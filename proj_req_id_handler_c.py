@@ -43,6 +43,8 @@ class Req_id_handler_c:
     def response_id(self, _id):
         del self.outgoing_reqs[_id]
         self.avail_requests.append(_id)
+        if (len(self.outgoing_reqs) == 0):
+            self.waiting_for_response = False
 
     # def _initilize_req_dict(self, init_number_of_ids):
         # for i in range(init_number_of_ids):

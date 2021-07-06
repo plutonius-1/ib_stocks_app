@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 import pandas as pd
 import pickle
 import cfg
+import proj_utils
 
 ########### TAGS #############
 
@@ -63,9 +64,9 @@ class finStatementsXmlReader_c:
             data = {"Q_data":Q_data, "K_data":K_data, }
             name = self.get_ticker(self.xml_master_root).upper()
             name = name + cfg.PROCESSED_FUNDAMENTAL_XML
-            path = cfg.PROCESSED_DATA_PATH + self.ticker.upper() + "/"
+            path = cfg.IB_PROCESSED_PATH + self.ticker.upper() + "/"
             proj_utils.check_dir_exists(path)
-            self.isave_obj(data, path + name) # saves as pkl
+            self.save_obj(data, path + name) # saves as pkl
             return data
         except:
             return {}

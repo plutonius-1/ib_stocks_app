@@ -5,6 +5,7 @@ import threading
 import proj_sec_scraping_utils
 import proj_snapshotXmlReader
 import proj_finStatementsXmlReader
+import proj_sics_handler_c
 
 YES = "y"
 NO  = "n"
@@ -25,6 +26,8 @@ class App_c:
         self.ib_api_run_thread = threading.Thread(target = self.ib_api.run)
         self.ib_api_run_thread.start()
 
+        self.sic_handler       = proj_sics_handler_c.Sics_handler_c(self.ib_api)
+
     def get_ticker_ib_data(self, function, **kwargs):
         ticker = kwargs["ticker"]
         self.ib_api.call_function(cfg.GET_FUNDUMENTALS, ticker = ticker)
@@ -34,11 +37,14 @@ class App_c:
         # process raw financial statements
         self.finStatementXmlReader.set_ticker(ticker)
         self.finStatementXmlReader.get_fundamentals_obj()
+        proj_utils.print_ok_msg("Processed {} raw fundamantals".format(ticker))
         # process snapshot statemets
         self.snapshotXmlReader.set_ticker(ticker)
         self.snapshotXmlReader.get_snapshot_obj()
+        proj_utils.print_ok_msg("Processed {} raw snapshot".format(ticker))
 
-
+    def get_tickers_basic_sic_competitors(self):
+asdkasdjlkasjkldjsalkjdlkasjkl CONT HERE
 
     def verify_app_structure(self):
         for _dir in cfg.BASIC_APP_STURCTURE_DIRS:
@@ -56,11 +62,27 @@ class App_c:
         if False in raw:
             self.get_ticker_ib_data(function = cfg.GET_FUNDUMENTALS, ticker = ticker)
 
+            self.wait_for_api_task(msg = "wating for fundamentals from IB to be recived before processing them")
+
+            self.process_ticker_ib_raw_data(ticker)
+
 
     def research_stocks(self, tickers : list):
         for t in tickers:
             self.research_stock(t)
 
+
+    def wait_for_api_task(self, msg = ""):
+        """
+        @ param msg - the main reason why we are halting the process of the software
+        function halts the process while wating for IB API to finish the while response
+        """
+        e_time = 0
+        while self.ib_api.id_handler.waiting_for_response:
+            if (e_time % 10 == 0 or e_time == 0):
+                print(proj_utils.bcolors.OKGREEN + msg + ": slept for {}".format(e_time) + proj_utils.bcolors.ENDC)
+            cfg.time.sleep(1)
+            e_time += 1
 
 def main():
     host1 = "192.168.0.183"
@@ -68,12 +90,13 @@ def main():
     host3 = "10.1.10.150"
 
     app = App_c(host = host1, port = 7496, clientId = 10)
-    reaserch = input("\nReasearch a stocks? (Y/N)\n").lower()
-    while reaserch != YES and reaserch != NO:
-        reaserch = input("\nReasearch a stocks? (Y/N)\n").lower()
+    # reaserch = input("\nReasearch a stocks? (Y/N)\n").lower()
+    research = proj_utils.input_header(msg = "\nReasearch a stocks? (Y/N)\n").lower()
+    while research != YES and research != NO:
+        research = input("\nReasearch a stocks? (Y/N)\n").lower()
 
     # get list of stocks
-    if (reaserch == YES):
+    if (research == YES):
         stocks = input("provide tickers: (directly or provide path to text file containg them) ")
         stocks = stocks.split()
         stocks_ = []

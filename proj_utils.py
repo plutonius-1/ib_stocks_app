@@ -64,8 +64,21 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+    def input_header(self, msg):
+        return input(self.HEADER + msg + self.ENDC)
+
+    def print_warning_msg(self, msg : str):
+        print(bcolors.WARNING + msg + bcolors.ENDC)
+
+
+def input_header(msg):
+    return input(bcolors.BOLD + bcolors.HEADER + msg + bcolors.ENDC)
+
 def print_warning_msg(msg : str):
     print(bcolors.WARNING + msg + bcolors.ENDC)
+
+def print_ok_msg(msg : str):
+    print(bcolors.OKGREEN + msg + bcolors.ENDC)
 
 def print_sleep_msg(timeout = 0, msg = ""):
     while (timeout > 0):

@@ -54,9 +54,31 @@ class Sics_handler_c:
 
     #### GETS ####
 
-    def get_comp_data(self):
+    def get_comp_data(self, ticker):
 
-        pass
+        # first get all of the sics the company is a part of
+        self.snapshotXmlReader.set_ticker(ticker)
+        comp_sics = self.snapshotXmlReader.get_sics() # {sic_code : text, ...}
+
+        industries = {}
+        # get the local SIC dict
+        local_sic_dict = self.get_local_sics_dict()
+
+        for sic in comp_sics.keys():
+            sic = str(sic)
+            # get the industry obj
+            try:
+                ind_obj = local_sic_dict[sic]
+            except KeyError as e:
+                self.update_local_sic_dict_by_sic(sic)
+                proj_utils.print_warning_msg("did not found SIC: {} in local dict - updating ".format(sic))
+                local_sic_dict = self.get_local_sics_dict()
+                ind_obj = local_sic_dict[sic]
+
+            industries.update({sic : ind_obj})
+
+        return industries
+
 
     def get_local_sics_dict(self):
         if (not os.path.exists(cfg.SIC_DICIONARY_PATH) or
@@ -144,6 +166,8 @@ class Sics_handler_c:
             # update the local dict copy
             industry.add_ticker_data(ticker = ticker, ticker_data = ticker_data)
 
+        # analyze industry after all tickers are add
+        industry.analyze_industry_after_tickers_are_added()
         local_dict_copy[sic] = industry
         self.save_sic_dictionary(local_dict_copy)
 
