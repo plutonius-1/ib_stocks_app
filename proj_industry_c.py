@@ -61,7 +61,7 @@ class Industry_c:
         self.SIC           = SIC
         self.tickers        = {}
         self.industry_data  = {}
-        self.last_update    = None
+        self.last_update    = cfg.DEFAULT_OBJECT_LAST_UPDATE
 
     def add_ticker_data(self, ticker, ticker_data):
         ticker_d = Ticker_data_c()
@@ -193,10 +193,16 @@ class Industry_c:
                 self.tickers[ticker].add_data_to_analyzed_data(param + "_Rating", tick_rating)
         return
 
+    def set_last_update(self):
+        self.last_update = proj_utils.get_date()
+
     ## GETS ##
     def get_industry_as_df(self):
         df = pd.DataFrame.from_dict(dict(zip(self.tickers, [i.get_analyzed_data() for i in self.tickers.values()])),orient = 'index')
         return df
+
+    def get_last_update(self):
+        return self.last_update
 
     ## OVERRIDES ##
     def __repr__(self):

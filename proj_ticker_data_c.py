@@ -8,7 +8,7 @@ class Ticker_data_c:
         self._raw_data        = {}
         self._analyzed_data   = {}
         self._in_industry_avg = {}
-        self._last_update     = None
+        self._last_update     = cfg.DEFAULT_OBJECT_LAST_UPDATE
 
     def _analyze_data(self, raw_data):
         analyzed_data = {}
@@ -39,6 +39,9 @@ class Ticker_data_c:
     def add_data_to_analyzed_data(self, tag, val):
         self._analyzed_data.update({tag : val})
 
+    def set_last_update(self):
+        self._last_update = proj_utils.get_date()
+
     #### GETS ####
     def get_ticker(self):
         return self._ticker
@@ -49,6 +52,8 @@ class Ticker_data_c:
         return self._analyzed_data
     def get_in_industry_avg(self):
         return self._in_industry_avg
+    def get_last_update(self):
+        return self.last_update
 
     def __repr__(self):
         return("ticker: {} \nanalyzed_data: {}\nin industy avg: {}\n".format(

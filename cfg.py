@@ -93,3 +93,4 @@ ANALYZE = "analyze"
 ### DATE FORMAT ###
 RE_DATE_FORMAT = r'\d{4}-\d{2}-\d{2}'
 re_date_format = re.compile(RE_DATE_FORMAT)
+DEFAULT_OBJECT_LAST_UPDATE = "0000-00-00"

@@ -249,11 +249,6 @@ class CompDataAnalysis:
         # TODO
         return
 
-    def get_sics(self):
-        # TODO have a big CFG file to get all const/paths from
-        return
-
-
 
     #### Calculations Functions ####
 

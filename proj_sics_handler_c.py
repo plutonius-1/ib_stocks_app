@@ -1,5 +1,5 @@
 import threading
-import proj_marketReaseach
+import proj_marketReseach
 import cfg
 import proj_utils
 import proj_sec_scraping_utils
@@ -55,7 +55,9 @@ class Sics_handler_c:
     #### GETS ####
 
     def get_comp_data(self, ticker):
-
+        """
+        returns all the industries objects in which the given ticker is a part of
+        """
         # first get all of the sics the company is a part of
         self.snapshotXmlReader.set_ticker(ticker)
         comp_sics = self.snapshotXmlReader.get_sics() # {sic_code : text, ...}
@@ -116,16 +118,14 @@ class Sics_handler_c:
 
         local_dict_copy = self.get_local_sics_dict()
 
-        # if (sic not in local_dict_copy):
-            # local_dict_copy.update({sic:{}})
-
         # Get companies by tickers from SEC
         sic_tickers = self.scrape_tickers_by_sic(sic)
 
         # Get (download) all the data of the companies via IB
         self.scrape_ticker_ib_data(sic_tickers)
 
-        proj_utils.print_sleep_msg(15, "wait response from IB to end") # TODO - implament a general indicator from IBAPI to signal all things return
+        # proj_utils.print_sleep_msg(15, "wait response from IB to end") # TODO - implament a general indicator from IBAPI to signal all things return
+        self.tws_api.waiting_for_response("Waiting for responses from IB for SIC: {}".format(sic))
 
         if (sic not in local_dict_copy):
             # make a new industry Obj
@@ -133,6 +133,13 @@ class Sics_handler_c:
 
         else:
             industry = local_dict_copy[sic]
+
+        last_update = industry.get_last_update()
+        new_date    = proj_utils.get_date()
+
+        # in case the industry is up to date do nothing
+        if not proj_utils.should_update_object(last_update, new_date, 3):
+            return
 
         # update local sic dict
         for ticker in sic_tickers:
@@ -162,9 +169,9 @@ class Sics_handler_c:
                            cfg.FUNDAMENTALS : fundumentals_obj,
                            cfg.SNAPSHOT     : snapshot_obj
                           }
-            # print("funds obj: {}\n snap: {}\n".format(fundumentals_obj, snapshot_obj))
             # update the local dict copy
             industry.add_ticker_data(ticker = ticker, ticker_data = ticker_data)
+        industry.set_last_update()
 
         # analyze industry after all tickers are add
         industry.analyze_industry_after_tickers_are_added()
@@ -182,9 +189,15 @@ class Sics_handler_c:
         local_dict_copy[sic] = industry
         self.save_sic_dictionary(local_dict_copy)
 
+
     def save_sic_dictionary(self, local_dict_copy):
         with open (cfg.SIC_DICIONARY_PATH, "wb") as f:
             pickle.dump(local_dict_copy, f, pickle.HIGHEST_PROTOCOL)
+            f.close()
+
+    def save_basic_competitors_obj(self, ticker, obj):
+        with open (cfg.MARKET_RESEARCH_PATH + ticker + ".pkl", "wb") as f:
+            pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
             f.close()
 
 

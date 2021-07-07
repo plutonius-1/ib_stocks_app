@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 import cfg
 import xml.etree.ElementTree as ET
 
@@ -100,5 +101,16 @@ def get_date():
     y = local_time_obj.tm_year
     m = local_time_obj.tm_mon
     d = local_time_obj.tm_mday
-
     return str(y+"-"+m+"-"+d)
+
+def calc_dates_diff(old_date, new_date):
+    d1 = datetime.strptime(old_date, "%Y-%m-%d")
+    d2 = datetime.strptime(new_date, "%Y-%m-%d")
+    assert d2 > d1
+    return abs((d2 - d1).days) // 30
+
+def should_update_object(old_date, new_date, time_threshuld):
+    diff = calc_dates_diff(old_date, new_date)
+    if (diff >= time_threshuld):
+        return True
+    return False

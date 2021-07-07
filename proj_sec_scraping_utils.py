@@ -48,7 +48,11 @@ def get_companies_by_sic(sic_code):
     # go to first SEC SIC page (start 0)
     start = 1
     companies_by_sic_req = requests.get(SEC_SEARCH_ACTIVE_COMPS_URL.format(str(sic_code), str(start)))
-    browser = webdriver.Firefox()
+    try:
+        browser = webdriver.Firefox(executable_path = r"/mnt/c/Users/avsha/Documents/geckodriver.exe")
+    except:
+        browser = webdriver.Firefox()
+
     visited_companies = []
 
     while (companies_by_sic_req.ok and "table" in companies_by_sic_req.text):

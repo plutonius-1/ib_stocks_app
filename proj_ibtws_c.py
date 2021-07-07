@@ -220,3 +220,14 @@ class IbTws(TestWrapper,
         contract.secType = "STK"
         return contract
 
+    def wait_for_api_task(self, msg = ""):
+        """
+        @ param msg - the main reason why we are halting the process of the software
+        function halts the process while wating for IB API to finish the while response
+        """
+        e_time = 0
+        while self.id_handler.waiting_for_response:
+            if (e_time % 10 == 0 or e_time == 0):
+                print(proj_utils.bcolors.OKGREEN + msg + ": slept for {}".format(e_time) + proj_utils.bcolors.ENDC)
+            cfg.time.sleep(1)
+            e_time += 1

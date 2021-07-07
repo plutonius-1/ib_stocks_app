@@ -51,10 +51,6 @@ class MarketReasercher:
         SIC = results[0].split()[1]
         return SIC
 
-    def get_sic_data(self, sic : int):
-
-        return
-
     ### LOCAL SIC CODES MANAGEMENT ###
     def _get_sic_codes_df(self):
         try:
@@ -255,4 +251,4 @@ class SicCompany:
         return self.profiles
 
     ### UTILS ###
-mr = MarketReasercher()
+# mr = MarketReasercher()
