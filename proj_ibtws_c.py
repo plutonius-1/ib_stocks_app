@@ -101,6 +101,9 @@ class IbTws(TestWrapper,
     def error(self, reqId: TickerId, errorCode: int, errorString: str):
             super().error(reqId, errorCode, errorString)
             print("Error. Id:", reqId, "Code:", errorCode, "Msg:", errorString)
+            _id = int(reqId)
+            if (_id in self.id_handler.outgoing_reqs):
+                self.id_handler.response_id(_id)
 
     ### reqId Handlers ###
     def makeUUID(self):
@@ -114,13 +117,20 @@ class IbTws(TestWrapper,
 
     def reqIdRegister(self, reqId , reqType : str, symbol : str):
         key = str(int(reqId))
-        assert key not in self.outGoingRequests, "a new request was made while reqId {} did not return".format(reqId)
+        # assert key not in self.outGoingRequests, "a new request was made while reqId {} did not return".format(reqId)
         reqIdObj = IBreq(reqId, reqType, symbol)
         self.outGoingRequests.update({key : reqIdObj})
-    ######################
 
+    ######################
+    def _check_max_requests(self):
+        while self.id_handler.get_num_outgoing_reqs() >= cfg.IB_MAX_REQUESTS_PER_SEC - 1: # and
+              # self.id_handler:
+            proj_utils.print_warning_msg(f"Holding on request - reached max request per second limit {cfg.IB_MAX_REQUESTS_PER_SEC}")
+            cfg.time.sleep(1)
 
     def call_function(self, function, **kwargs):
+        # before sending request to IB - first check the outstanding number of requests is not bigger the the allowed max (07/08/21): 50
+
         if (function == cfg.GET_FUNDUMENTALS):
             try:
                 ticker = self.kwargs[self.TICKER_KEY]
@@ -149,7 +159,7 @@ class IbTws(TestWrapper,
                            fundamentalDataOptions : list
                            ):
         super().reqFundamentalData(reqId, contract, reportType, fundamentalDataOptions)
-        print("Requesting :{} Fundumental data type :{}".format(contract.symbol, reportType))
+        print("ReqId: {} Requesting :{} Fundumental data type :{}".format(reqId,contract.symbol, reportType))
         self.reqIdRegister(reqId, reportType, symbol = contract.symbol)
 
     def fundamentalData(self, reqId: TickerId, data: str):
@@ -170,11 +180,11 @@ class IbTws(TestWrapper,
         @ param - type_to_save: in which dir to save data based on request type (see generalReqTypeDict for options
         """
         # convert the reqId to str - Note key should be strings
-        reqIdKey = str(int(reqId))
-        assert reqIdKey in self.outGoingRequests, "ERROR: reqId: {} not in outGoingRequests".format(reqIdKey)
+        reqIdKey = int(reqId)
+        assert str(reqIdKey) in self.outGoingRequests, "ERROR: reqId: {} not in outGoingRequests".format(reqIdKey)
 
         # get the req object
-        reqIdObj = self.outGoingRequests[reqIdKey]
+        reqIdObj = self.outGoingRequests[str(reqIdKey)]
         reqType = reqIdObj.reqType
         symbol  = reqIdObj.symbol
 
@@ -197,7 +207,7 @@ class IbTws(TestWrapper,
         f.close()
 
         # delete from reqIds bank
-        self.reqCallBackHandler(reqIdKey)
+        self.reqCallBackHandler(str(reqIdKey))
         self.id_handler.response_id(reqId)
 
     def connectToTWS(self, host : str, port : str, clientId : int):
@@ -229,5 +239,6 @@ class IbTws(TestWrapper,
         while self.id_handler.waiting_for_response:
             if (e_time % 10 == 0 or e_time == 0):
                 print(proj_utils.bcolors.OKGREEN + msg + ": slept for {}".format(e_time) + proj_utils.bcolors.ENDC)
+                print("ids left: ", self.id_handler.outgoing_reqs)
             cfg.time.sleep(1)
             e_time += 1

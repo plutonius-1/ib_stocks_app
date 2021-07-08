@@ -1,10 +1,12 @@
 import xml.etree.ElementTree as ET
+from datetime import datetime
 import re
 import requests
 import os
 import pandas as pd
 import time
 import pickle
+import threading
 
 ### GENERAL KEYWORDS ###
 
@@ -40,6 +42,8 @@ SNAPSHOT_POSTFIX = "_snapshot.xml"
 ## IbTWS stuff ##
 GET_FUNDUMENTALS = "fundumentals"
 IBTWS_FUNCTIONS = [GET_FUNDUMENTALS]
+IB_MAX_REQUESTS_PER_SEC = 50
+IB_MAX_REQUESTS_PER_10_MIN = 60
 #################
 
 ### PROCESSED XML FILES POSTFIX ###

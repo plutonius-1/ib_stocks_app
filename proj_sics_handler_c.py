@@ -124,8 +124,8 @@ class Sics_handler_c:
         # Get (download) all the data of the companies via IB
         self.scrape_ticker_ib_data(sic_tickers)
 
-        # proj_utils.print_sleep_msg(15, "wait response from IB to end") # TODO - implament a general indicator from IBAPI to signal all things return
-        self.tws_api.waiting_for_response("Waiting for responses from IB for SIC: {}".format(sic))
+        # Make sure all requests had responses
+        self.tws_api.wait_for_api_task("Waiting for responses from IB for SIC: {}".format(sic))
 
         if (sic not in local_dict_copy):
             # make a new industry Obj

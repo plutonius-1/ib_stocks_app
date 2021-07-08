@@ -6,43 +6,35 @@ Created on Fri Mar 19 15:44:51 2021
 """
 
 import pandas as pd
-
-d1 = {"A":{"a":1,"b":2,"c":3,"d":4},
-      "B":{"a":10,"b":20},
-      "C":{"a":11,"b":22}}
+import time
+from datetime import datetime
 
 
-df1 = pd.DataFrame.from_dict(d1)
+class my_c:
+    def __init__(self):
+        self.TIME_INC = 10
+        self._last_timestamp = datetime.now()
+        self.done = False
 
+    def time_elapsed(self):
+        now = datetime.now()
+        return (now - self._last_timestamp).seconds
 
-def calc(df : pd.DataFrame):
-    ser = df.loc["a"]
-    print(ser)
+    def _update_last_timesamp(self, datetime_obj):
+        self._last_timestamp = datetime_obj
 
-    ser = ser[::-1]
-    dic = {}
+    def update_counter(self, time_inc : int):
+        while not self.did_enough_time_pased():
+            print("not enought time passed")
+            time.sleep(3)
+        self._update_last_timesamp(datetime.now())
 
-    div = len(ser)
+    def did_enough_time_pased(self):
+        if (self.time_elapsed() > self.TIME_INC):
+            return True
+        return False
 
-    for idx in range(len(ser)):
-        current_rnd_asset = 0.0
-        for i in range(idx + 1):
-            div = idx + 1
-            current_rnd_asset += ser[i] * (i+1)/div
-        dic.update({ser.index[idx]:current_rnd_asset})
+    def set_done(self, val : bool):
+        self.done = val
 
-    res = pd.Series(dic)
-    res = res[::-1]
-
-    return res
-
-def func(d : dict):
-    keys = ["A","B","C"]
-
-    for k in keys:
-        try: print("data is: ", d[k])
-        except Exception as e:
-            print(e)
-dic = {"A":1}
-func(dic)
 
