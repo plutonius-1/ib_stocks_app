@@ -7,6 +7,7 @@ class Ticker_data_c:
         self._ticker          = None
         self._raw_data        = {}
         self._analyzed_data   = {}
+        self._statements_dfs  = {}
         self._in_industry_avg = {}
         self._last_update     = cfg.DEFAULT_OBJECT_LAST_UPDATE
 
@@ -20,6 +21,23 @@ class Ticker_data_c:
                 analyzed_data.update({tag : val})
             except:
                 pass
+
+        # add statements dfs
+        fundametals_Q = raw_data["fundamentals"]["Q_data"]
+        fundametals_K = raw_data["fundamentals"]["K_data"]
+        for statement in fundametals_Q:
+            self.add_statement_df(statement + "_Q", fundametals_Q[statement])
+        for statement in fundametals_K:
+            self.add_statement_df(statement + "_K", fundametals_Q[statement])
+
+        # clac the pct change for all statements
+        for statement_df in self._statements_dfs:
+            df = self._statements_dfs[statement_df]
+
+            for tag in df.index:
+                df = df.append(self.calc_change_over_period(df.loc[tag]))
+            self._statements_dfs.update({statement_df : df})
+
         return analyzed_data
 
     def calc_change_over_period(self, series : cfg.pd.Series):
@@ -29,10 +47,15 @@ class Ticker_data_c:
         # 2016 data
         # ...  data
         ser = series.sort_index()
+        ser_shifted = ser.shift(1)
+        diff = ser - ser_shifted
+        pct_change = diff / abs(ser_shifted)
+        pct_change.name = pct_change.name + "_pct_change"
+        return pct_change
 
-        ser = ser.pct_change()
-        ALSO FIX in industry class
-        return ser
+    def add_statement_df(self, name : str, raw_statement : dict):
+        self._statements_dfs.update({name:cfg.pd.DataFrame.from_dict(raw_statement)})
+
     #### SETS ####
     def set_last_update(self):
         pass
@@ -65,6 +88,8 @@ class Ticker_data_c:
         return self._in_industry_avg
     def get_last_update(self):
         return self.last_update
+    def get_statements_df(self):
+        return self._statements_dfs
 
     def __repr__(self):
         return("ticker: {} \nanalyzed_data: {}\nin industy avg: {}\n".format(

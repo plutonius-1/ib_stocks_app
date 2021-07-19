@@ -145,6 +145,7 @@ class IbTws(TestWrapper,
             self.reqFundamentalData(reqIds[1], contract, "ReportSnapshot", [])
             self.reqFundamentalData(reqIds[2], contract, "ReportsFinSummary", [])
             self.reqFundamentalData(reqIds[3], contract, "RESC",[])
+            # self.reqFundamentalData(reqIds[4], contract, "Ratios", [])
         else:
             pass
 

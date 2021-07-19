@@ -177,6 +177,9 @@ def get_company_sic(ticker : str):
     URL = CIK_URL.format(ticker)
     headers = {"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:90.0) Gecko/20100101 Firefox/90.0"}
     r = requests.get(URL, headers = headers)
+    if not r.ok:
+        headers = {"User-Agent":"Mozilla/5.0 (X11; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0"}
+        r = requests.get(URL, headers = headers)
     assert r.ok
     results = SIC_RE.search(r.text)
 

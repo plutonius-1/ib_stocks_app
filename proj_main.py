@@ -79,6 +79,9 @@ class App_c:
             self.get_tickers_basic_sic_competitors(ticker)
 
     def research_stocks(self, tickers : list):
+
+        self.sic_handler.clear_existsing_dic()
+
         for t in tickers:
             self.research_stock(t)
 
@@ -107,10 +110,10 @@ class App_c:
 
 def main():
     host1 = "192.168.0.183"
-    dunbros = "10.10.4.107"
+    dunbros = "10.10.4.45"
     host3 = "10.1.10.150"
 
-    app = App_c(host = host1, port = 7496, clientId = 10)
+    app = App_c(host = dunbros, port = 7496, clientId = 10)
     # reaserch = input("\nReasearch a stocks? (Y/N)\n").lower()
     research = proj_utils.input_header(msg = "\nReasearch a stocks? (Y/N)\n").lower()
     while research != YES and research != NO:

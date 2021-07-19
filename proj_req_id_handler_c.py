@@ -2,6 +2,7 @@ from datetime import datetime
 import threading
 import cfg
 import proj_utils
+from cfg import pd
 
 AVAIL = "AVAIL"
 OUT   = "OUT"
@@ -26,7 +27,7 @@ class Req_id_handler_c:
         self.waiting_for_response = False
         self.time = datetime.now()
         self.error_ids = []
-
+        self.reqs_history = self.get_local_requests_file()
         # pacing stuff #
         self.reqs_counter = cfg.IB_MAX_REQUESTS_PER_10_MIN
         self._halt_due_to_pacing = False
@@ -94,6 +95,12 @@ class Req_id_handler_c:
             minuets = 10
             self.reqs_counter = cfg.IB_MAX_REQUESTS_PER_10_MIN
             self._halt_due_to_pacing = False
+
+    def get_local_requests_file(self):
+        if (not cfg.os.path.exists(cfg.IB_REQUEST_HISTORY_PATH)):
+            return cfg.DEFAULT_IB_REQ_HISTORY_DICT
+        else:
+            return pd.read_pickle(cfg.IB_REQUEST_HISTORY_PATH)
 
 
 

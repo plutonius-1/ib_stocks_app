@@ -7,12 +7,10 @@ import proj_utils
 #### INDUSTRY OPERATIONS ####
 
 def industry_op_avg_add(industy_avg, num_of_old_companies, new_val):
-    new_avg = (industy_avg + new_val) / (num_of_old_companies + 1)
-    return new_avg
+    return (industy_avg * num_of_old_companies + new_val) / (num_of_old_companies + 1)
 
 def industry_op_avg_remove(industy_avg, num_of_old_companies, val_to_remove):
-    new_avg = (industy_avg - val_to_remove) / (num_of_old_companies - 1)
-    return new_avg
+    return (industy_avg * num_of_old_companies - val_to_remove) / (num_of_old_companies - 1)
 
 def industry_cumsum(**kwargs):
     add_remove = kwargs["add_remove"]
