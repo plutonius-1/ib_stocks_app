@@ -14,6 +14,38 @@ CODE_KEY = "code"
 
 SEC_SEARCH_ACTIVE_COMPS_URL = "https://www.sec.gov/cgi-bin/srch-edgar?text=ASSIGNED-SIC%3D{}%20and%20FORM-TYPE%3D10-Q&start={}&count=80&first=2020&last=2021"
 SEC_BASE_ADDR = "https://www.sec.gov/"
+SEC_SEARCH_BY_CIK_URL = "https://www.sec.gov/Archives/edgar/data/{}"
+
+def get_companys_sic(cik : str):
+    url = SEC_SEARCH_BY_CIK_URL.format(cik) + "/"
+    r = requests.get(url)
+    patt = re.compile(r'SIC=\d+')
+    assert r.ok
+    soup = BeautifulSoup(r.content, "lxml")
+    dir_links = [i.attrs['href'] for i in soup.find_all("a") if 'href' in i.attrs and "Archives/edgar/data" in i.attrs['href']]
+    for link in dir_links:
+        try:
+            url = SEC_BASE_ADDR + link
+            dir_page = requests.get(url)
+            soup = BeautifulSoup(dir_page.content, "lxml")
+            div  = soup.find_all("div",)
+            html_links = [i.attrs['href'] for i in soup.find_all("a") if 'href' in i.attrs and "Archives/edgar/data" in i.attrs['href']]
+
+            for l in html_links:
+                url = SEC_BASE_ADDR + link
+                comp_page = r.get(url)
+                soup = BeautifulSoup(comp_page.content, "lxml")
+                comp_page_links = soup.find_all("a")
+                for page_link in comp_page_links:
+                    res = patt.search(page_link.attrs['href'])
+                    if (res):
+                        name = res.group(0).split("=")[1]
+                        if (name != None):
+                            return name
+        except:
+            continue
+
+    return None
 
 def get_companies_by_sic(sic_code):
 
@@ -77,7 +109,7 @@ def get_companies_by_sic(sic_code):
 
             for i in trs:
                 try:
-                    comp_name = i.text
+                    comp_name = i.text.split("\n")[2]
                     if (comp_name in visited_companies):
                         continue
                     else:
@@ -103,7 +135,7 @@ def get_companies_by_sic(sic_code):
                                     ticker = e.split()[0]
                             ####
                             # ticker = a.text.split()[0]
-                            sics_tickers.append(ticker)
+                                    sics_tickers.append(ticker)
                             # verificatio - delete
                             name = soup.find('span', {"id" : "name"})
                             # print(name.text)
@@ -134,3 +166,24 @@ def get_companies_by_sic(sic_code):
 # print(get_companies_by_sic(3841))
 
 
+def get_company_sic(ticker : str):
+    """
+    @ param ticker - the ticker of the comapny we want to find the SIC for
+    returns the sic as int
+    """
+    CIK_URL = 'http://www.sec.gov/cgi-bin/browse-edgar?CIK={}&Find=Search&owner=exclude&action=getcompany'
+    SIC_RE = re.compile(r'SIC=\d+')
+    # CIK    = self.get_company_cik(ticker)
+    URL = CIK_URL.format(ticker)
+    headers = {"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:90.0) Gecko/20100101 Firefox/90.0"}
+    r = requests.get(URL, headers = headers)
+    assert r.ok
+    results = SIC_RE.search(r.text)
+
+    # assert len(results) >0, "MarketReasercher - Did not find the SIC for {}".format(ticker)
+    # SIC = results[0].split()[1]
+    try:
+        SIC = results.group(0).split("=")[1]
+    except:
+        SIC = None
+    return SIC

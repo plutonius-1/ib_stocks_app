@@ -3,6 +3,7 @@ import pandas as pd
 import pickle
 import cfg
 import proj_utils
+import proj_sec_scraping_utils
 
 class snapshotXmlReader_c:
     def __init__(self):
@@ -23,6 +24,14 @@ class snapshotXmlReader_c:
         if (len(sics.keys()) == 0):
             print("*** Warning: found 0 SICS for {} ***".format(self.ticker))
         return sics
+
+    def get_sic_via_sec(self):
+        assert self.ticker != None
+        # cik = proj_utils.get_company_cik(self.ticker)
+        sic = proj_sec_scraping_utils.get_company_sic(self.ticker)
+        if type(sic) == str:
+            sic = [sic]
+        return sic
 
     def get_ratios(self):
         """

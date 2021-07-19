@@ -60,13 +60,16 @@ class Sics_handler_c:
         """
         # first get all of the sics the company is a part of
         self.snapshotXmlReader.set_ticker(ticker)
-        comp_sics = self.snapshotXmlReader.get_sics() # {sic_code : text, ...}
+
+        # NOTE - the sics reported via IB ARE NOT THE SAME AS REPORTED IN SEC - thus we use sec for now
+        # comp_sics = self.snapshotXmlReader.get_sics() cont here mofo # {sic_code : text, ...}
+        comp_sics = self.snapshotXmlReader.get_sic_via_sec()
 
         industries = {}
         # get the local SIC dict
         local_sic_dict = self.get_local_sics_dict()
 
-        for sic in comp_sics.keys():
+        for sic in comp_sics:
             sic = str(sic)
             # get the industry obj
             try:
@@ -170,7 +173,8 @@ class Sics_handler_c:
                            cfg.SNAPSHOT     : snapshot_obj
                           }
             # update the local dict copy
-            industry.add_ticker_data(ticker = ticker, ticker_data = ticker_data)
+            if (fundumentals_obj != None and snapshot_obj != None):
+                industry.add_ticker_data(ticker = ticker, ticker_data = ticker_data)
         industry.set_last_update()
 
         # analyze industry after all tickers are add

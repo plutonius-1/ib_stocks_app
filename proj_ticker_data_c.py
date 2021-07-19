@@ -22,6 +22,17 @@ class Ticker_data_c:
                 pass
         return analyzed_data
 
+    def calc_change_over_period(self, series : cfg.pd.Series):
+        # first assert that index (dates)is increasing
+        # ie:
+        # 2015 data
+        # 2016 data
+        # ...  data
+        ser = series.sort_index()
+
+        ser = ser.pct_change()
+        ALSO FIX in industry class
+        return ser
     #### SETS ####
     def set_last_update(self):
         pass

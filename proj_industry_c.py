@@ -128,6 +128,7 @@ class Industry_c:
         new_analyzed_data = new_ticker_obj.get_analyzed_data()
         num_of_companies = len(self.tickers)
 
+        # print(f"Adding ticker {new_ticker_obj}\n")
         for data_name, new_val in new_analyzed_data.items():
 
             func_to_perform = self._get_add_remove_function("add",data_name)
@@ -187,7 +188,8 @@ class Industry_c:
         # sort for each param and get the index of each ticker after sorting
         df_params = df.columns
         for param in df_params:
-            temp_df = df.sort_values(param, ascending = True)
+            temp_df = df.sort_index()
+            temp_df = temp_df.sort_values(param, ascending = True)
             ratings = dict(zip(temp_df.index, [i for i in range(len(temp_df.index))]))
             for ticker, tick_rating in ratings.items():
                 self.tickers[ticker].add_data_to_analyzed_data(param + "_Rating", tick_rating)

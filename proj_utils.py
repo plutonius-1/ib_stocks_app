@@ -2,7 +2,8 @@ import os
 from datetime import datetime
 import cfg
 import xml.etree.ElementTree as ET
-
+import re
+import requests
 def get_and_varify_page(self,
                         third_party_name : str,
                         ticker : str,
@@ -101,7 +102,7 @@ def get_date():
     y = local_time_obj.tm_year
     m = local_time_obj.tm_mon
     d = local_time_obj.tm_mday
-    return str(y+"-"+m+"-"+d)
+    return str(y)+"-"+str(m)+"-"+str(d)
 
 def calc_dates_diff(old_date, new_date):
     d1 = datetime.strptime(old_date, "%Y-%m-%d")
@@ -110,7 +111,17 @@ def calc_dates_diff(old_date, new_date):
     return abs((d2 - d1).days) // 30
 
 def should_update_object(old_date, new_date, time_threshuld):
+    if (old_date == cfg.DEFAULT_OBJECT_LAST_UPDATE):
+        return True
     diff = calc_dates_diff(old_date, new_date)
     if (diff >= time_threshuld):
         return True
     return False
+
+
+def get_company_cik(ticker : str):
+    CIK_RE = re.compile(r'.*CIK=(\d{10}).*')
+    CIK_URL = 'http://www.sec.gov/cgi-bin/browse-edgar?CIK={}&Find=Search&owner=exclude&action=getcompany'
+    results = CIK_RE.findall(requests.get(CIK_URL.format(ticker)).text)
+    assert(len(results) > 0 ), "MarketReasercher - Did not find the CIK for {}".format(ticker)
+    return str(results[0])

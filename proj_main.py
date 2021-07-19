@@ -6,6 +6,7 @@ import proj_sec_scraping_utils
 import proj_snapshotXmlReader
 import proj_finStatementsXmlReader
 import proj_sics_handler_c
+from cfg import logging
 
 YES = "y"
 NO  = "n"

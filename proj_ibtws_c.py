@@ -103,7 +103,8 @@ class IbTws(TestWrapper,
             print("Error. Id:", reqId, "Code:", errorCode, "Msg:", errorString)
             _id = int(reqId)
             if (_id in self.id_handler.outgoing_reqs):
-                self.id_handler.response_id(_id)
+                print(f"deleting id {_id} to to err")
+                self.id_handler.del_from_out_going_reqs(_id)
 
     ### reqId Handlers ###
     def makeUUID(self):
@@ -139,7 +140,7 @@ class IbTws(TestWrapper,
 
             contract = self.make_us_stk_contract(ticker)
             # reqIds = [self.makeUUID() for i in range(4)]
-            reqIds = [self.id_handler.register_outgoing_req() for i in range(4)]
+            reqIds = [self.id_handler.register_outgoing_req(historical = True) for i in range(4)]
             self.reqFundamentalData(reqIds[0], contract, "ReportsFinStatements", [])
             self.reqFundamentalData(reqIds[1], contract, "ReportSnapshot", [])
             self.reqFundamentalData(reqIds[2], contract, "ReportsFinSummary", [])
