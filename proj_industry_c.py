@@ -59,6 +59,8 @@ class Industry_c:
         self.SIC           = SIC
         self.tickers        = {}
         self.industry_data  = {}
+        self.industry_period_data = {cfg.K : {},
+                                    cfg.Q : {}} # {K : yearly data,  Q : quarter data}
         self.last_update    = cfg.DEFAULT_OBJECT_LAST_UPDATE
 
     def add_ticker_data(self, ticker, ticker_data):
@@ -191,6 +193,26 @@ class Industry_c:
             ratings = dict(zip(temp_df.index, [i for i in range(len(temp_df.index))]))
             for ticker, tick_rating in ratings.items():
                 self.tickers[ticker].add_data_to_analyzed_data(param + "_Rating", tick_rating)
+
+        # calc industry period data
+        # qurterly
+        for t in self.tickers.values():
+
+            statements      = t.get_statements_df()
+            pct_statements  = t.get_pct_change_statements_dfs()
+            pct_data = None
+            for name, df in statements.items():
+                for tag in df.index:
+                    if (pct_data == None):
+                        pct_data = t.get_line_from_statement(pct_statements[name], tag)
+                    else:
+                        pct_data = pct_data + t.get_line_from_statement(pct_statements[name], tag)
+
+
+                pct_data = pct_data / len(self.tickers)
+                if (cfg.K in name):
+                    self.industry_period_data[cfg.K].update({name : pct_data})
+                    print(f'name : {name} \n data: {pct_data}')
         return
 
     def set_last_update(self):

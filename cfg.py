@@ -95,6 +95,8 @@ MKTSHARE     = "MKTSHARE"
 
 ## GENERAL CONSTS ##
 ANALYZE = "analyze"
+Q       = "Q"
+K       = "K"
 
 INCOME_NAME = "INC"
 BALACNE_NAME = "BAL"
