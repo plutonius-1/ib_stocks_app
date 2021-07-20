@@ -2,6 +2,12 @@ import cfg
 import proj_utils
 from proj_utils import bcolors
 
+## CONSTS ##
+PCT_CHANGE_POSTFIX = " pct change"
+
+
+############
+
 class Ticker_data_c:
     def __init__(self):
         self._ticker          = None
@@ -50,7 +56,7 @@ class Ticker_data_c:
         ser_shifted = ser.shift(1)
         diff = ser - ser_shifted
         pct_change = diff / abs(ser_shifted)
-        pct_change.name = pct_change.name + "_pct_change"
+        pct_change.name = pct_change.name + PCT_CHANGE_POSTFIX
         return pct_change
 
     def add_statement_df(self, name : str, raw_statement : dict):
@@ -79,7 +85,6 @@ class Ticker_data_c:
     #### GETS ####
     def get_ticker(self):
         return self._ticker
-
     def get_raw_data(self):
         return self._raw_data
     def get_analyzed_data(self):
@@ -91,6 +96,25 @@ class Ticker_data_c:
     def get_statements_df(self):
         return self._statements_dfs
 
+    def get_line_from_statement(self, df : cfg.pd.DataFrame, tag : str, get_pct_change = True):
+        s1 = df.loc(tag)
+        s2 = df.loc(tag + PCT_CHANGE_POSTFIX)
+        if (get_pct_change):
+            return (s1,s2)
+        return s1
+
+    def find_line_in_statements(self,tag : str):
+        res = None
+        for s in self._statements_dfs:
+            statement = self._statements_dfs[s]
+            try:
+                res = self.get_line_from_statement(statement, tag)
+                return res
+            except:
+                pass
+        return res
+
+    ## OVERRIDES ##
     def __repr__(self):
         return("ticker: {} \nanalyzed_data: {}\nin industy avg: {}\n".format(
                 self._ticker,

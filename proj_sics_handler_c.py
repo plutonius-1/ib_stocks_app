@@ -211,7 +211,7 @@ class Sics_handler_c:
         """
         ans = None
         while ans != "Y" and ans != "N":
-            ans = input("Are you sure you want to delete the SICs dictionary? (Y/N)")
+            ans = input(proj_utils.bcolors.WARNING + "Are you sure you want to delete the SICs dictionary? (Y/N)" + proj_utils.bcolors.ENDC)
         if (ans == "Y"):
             os.remove(cfg.SIC_DICIONARY_PATH)
             self.save_sic_dictionary({})
