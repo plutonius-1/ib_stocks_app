@@ -17,6 +17,8 @@ class Ticker_data_c:
         self._pct_change_statements_dfs = {}
         self._in_industry_avg = {}
         self._last_update     = cfg.DEFAULT_OBJECT_LAST_UPDATE
+        self._k_tags_compare_to_industry = {}
+        self._q_tags_compare_to_industry = {}
 
     def _analyze_data(self, raw_data):
         analyzed_data = {}
@@ -35,7 +37,7 @@ class Ticker_data_c:
         for statement in fundametals_Q:
             self.add_statement_df(statement + "_Q", fundametals_Q[statement])
         for statement in fundametals_K:
-            self.add_statement_df(statement + "_K", fundametals_Q[statement])
+            self.add_statement_df(statement + "_K", fundametals_K[statement])
 
         # clac the pct change for all statements
         for statement_df in self._raw_statements_dfs:
@@ -64,9 +66,6 @@ class Ticker_data_c:
         self._raw_statements_dfs.update({name:cfg.pd.DataFrame.from_dict(raw_statement)})
 
     #### SETS ####
-    def set_last_update(self):
-        pass
-
     def set_ticker(self, ticker):
         self._ticker = ticker
 
@@ -80,6 +79,18 @@ class Ticker_data_c:
     def add_data_to_analyzed_data(self, tag, val):
         self._analyzed_data.update({tag : val})
 
+    def update_k_tags_compare_to_industry(self, data : dict):
+        dict_keys = [n.split("_")[0] for n in data.keys()]
+        for name in cfg.STATEMENTS_NAMES:
+            assert name in dict_keys, print(f'NAME : {name}, dict keys: {dict_keys}')
+            self._k_tags_compare_to_industry.update({name : data[name+"_K"]}) # TODO
+
+    def update_q_tags_compare_to_industry(self, data : dict):
+        dict_keys = [n.split("_")[0] for n in data.keys()]
+        for name in cfg.STATEMENTS_NAMES:
+            assert name in dict_keys
+            self._q_tags_compare_to_industry.update({name : data[name+"_Q"]}) # TODO
+
     def set_last_update(self):
         self._last_update = proj_utils.get_date()
 
@@ -88,6 +99,8 @@ class Ticker_data_c:
         return self._ticker
     def get_raw_data(self):
         return self._raw_data
+    def get_raw_statements_dfs(self):
+        return self._raw_statements_dfs
     def get_analyzed_data(self):
         return self._analyzed_data
     def get_in_industry_avg(self):
@@ -98,10 +111,27 @@ class Ticker_data_c:
         return self._raw_statements_dfs
     def get_pct_change_statements_dfs(self):
         return self._pct_change_statements_dfs
-
     def get_line_from_statement(self, df : cfg.pd.DataFrame, tag : str):
-        s1 = df.loc[tag]
-        return s1
+        return df.loc[tag]
+    def get_q_tags_compare_to_industry(self):
+        return self._q_tags_compare_to_industry
+    def get_k_tags_compare_to_industry(self):
+        return self._k_tags_compare_to_industry
+
+    def get_change_of_tag(self,
+                          tag            : str,
+                          Q_or_K         : str
+                          ):
+        """
+        returns tuple of (last year/qurater value, change over last qurters/yealy on average)
+        """
+        res = self.find_line_in_pct_statements(tag, Q_or_K)
+        if not res.dropna().empty:
+            res = res.dropna()
+            length = len(res)
+            return (res[-1], res.cumsum()[-1] / length)
+        return None, None
+
 
     def find_line_in_statements(self,tag : str, Q_or_K : str):
         res = None
@@ -116,7 +146,24 @@ class Ticker_data_c:
                     pass
         return res
 
+    def find_line_in_pct_statements(self, tag : str, Q_or_K : str):
+        res = cfg.pd.Series()
+        assert Q_or_K == "Q" or Q_or_K == "K"
+        for s in self._pct_change_statements_dfs:
+            if Q_or_K in s:
+                statement = self._pct_change_statements_dfs[s]
+                try:
+                    res = self.get_line_from_statement(statement, tag)
+                    return res
+                except:
+                    pass
+        return res
+
+
     ## OVERRIDES ##
+    def analyze_data(self):
+        self._analyze_data(self._raw_data)
+
     def __repr__(self):
         return("ticker: {} \nanalyzed_data: {}\nin industy avg: {}\n".format(
                 self._ticker,

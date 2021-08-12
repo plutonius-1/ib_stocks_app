@@ -180,7 +180,7 @@ def get_company_sic(ticker : str):
     if not r.ok:
         headers = {"User-Agent":"Mozilla/5.0 (X11; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0"}
         r = requests.get(URL, headers = headers)
-    assert r.ok
+    assert r.ok, print(r.content)
     results = SIC_RE.search(r.text)
 
     # assert len(results) >0, "MarketReasercher - Did not find the SIC for {}".format(ticker)

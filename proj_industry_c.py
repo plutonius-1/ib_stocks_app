@@ -3,6 +3,7 @@ from cfg import pd
 import numpy as np
 import cfg
 import proj_utils
+from proj_series import proj_Series
 
 #### INDUSTRY OPERATIONS ####
 
@@ -195,25 +196,98 @@ class Industry_c:
                 self.tickers[ticker].add_data_to_analyzed_data(param + "_Rating", tick_rating)
 
         # calc industry period data
-        # qurterly
+        # get a demo of a statement
+        # for t in self.tickers.values():
+            # statements = t.get_statements_df()
+            # for s in statements.values():
+                # if s.empty:
+                    # continue
+            # break
+        statements = {}
         for t in self.tickers.values():
+            t_stats = t.get_statements_df()  # returns bal,inc,cas for Q and K
+            for state_name, state in t_stats.items():
+                if (state_name not in statements):
+                    statements.update({state_name : []})
 
-            statements      = t.get_statements_df()
-            pct_statements  = t.get_pct_change_statements_dfs()
-            pct_data = None
-            for name, df in statements.items():
+                tags = list(state.index)
+                for tag in tags:
+                    if tag not in statements[state_name]:
+                        statements[state_name].append(tag)
+
+
+        num_tickers = len(self.tickers)
+        for name, tag_list in statements.items():
+            q_data = {}
+            k_data = {}
+            # if cfg.Q in name:
+            for tag in tag_list:
+                last_sample_avg   = 0.0
+                period_sample_avg = 0.0
+
+                for ticker in self.tickers.values():
+                    if (cfg.Q in name):
+                        last_val, period_val = ticker.get_change_of_tag(tag, cfg.Q)
+                    elif (cfg.K in name):
+                        last_val, period_val = ticker.get_change_of_tag(tag, cfg.K)
+
+                    if (last_val != None and period_val != None):
+                            last_sample_avg += last_val
+                            period_sample_avg += period_val
+
+
+                last_sample_avg   /= num_tickers
+                period_sample_avg /= num_tickers
+                if (cfg.Q in name):
+                    q_data.update({tag : [last_sample_avg, period_sample_avg]})
+                    self.industry_period_data[cfg.Q][name] = q_data
+                else:
+                    k_data.update({tag : [last_sample_avg, period_sample_avg]})
+                    self.industry_period_data[cfg.K][name] = k_data
+
+        for ticker in self.tickers.values():
+            q_data = {}
+            k_data = {}
+            for name, df in ticker.get_pct_change_statements_dfs().items():
+                data = {}
                 for tag in df.index:
-                    if (pct_data == None):
-                        pct_data = t.get_line_from_statement(pct_statements[name], tag)
+                    if (cfg.Q in name):
+                        val = self.compare_ticker_tag_change(ticker, tag, cfg.Q)
                     else:
-                        pct_data = pct_data + t.get_line_from_statement(pct_statements[name], tag)
+                        val = self.compare_ticker_tag_change(ticker, tag, cfg.K)
+                    data.update({tag : val})
+                if (cfg.Q in name):
+                    q_data.update({name : data})
+                else:
+                    k_data.update({name:data})
 
+            ticker.update_q_tags_compare_to_industry(q_data)
+            ticker.update_k_tags_compare_to_industry(k_data)
 
-                pct_data = pct_data / len(self.tickers)
-                if (cfg.K in name):
-                    self.industry_period_data[cfg.K].update({name : pct_data})
-                    print(f'name : {name} \n data: {pct_data}')
         return
+
+    def compare_ticker_tag_change(self, ticker : Ticker_data_c, tag : str, Q_or_K):
+        ticker_tag_last_val, ticker_tag_period_val = ticker.get_change_of_tag(tag, Q_or_K) # returns (last Q/K, over period Q/K) or (None, None)
+        try:
+            indust_tag_last_val, indust_tag_period_val = proj_utils._finditem(self.industry_period_data[Q_or_K], tag) #FIXME FIX THIS LINE
+        except:
+            indust_tag_last_val, indust_tag_period_val = None, None
+            print(f'looked for {tag} in perdio_data {Q_or_K} and failed')
+
+        if (ticker_tag_last_val == None or ticker_tag_period_val == None or indust_tag_last_val == None or indust_tag_period_val == None):
+            return None
+        else:
+            return (
+                self.compare_val_to_avg(ticker_tag_last_val, indust_tag_last_val),
+                self.compare_val_to_avg(ticker_tag_period_val, indust_tag_period_val)
+                    )
+
+    def compare_val_to_avg(self, val_to_compare, avg):
+        num_comps = len(self.tickers)
+        _sum = avg * num_comps
+        new_avg =(_sum - val_to_compare) / num_comps - 1
+        return val_to_compare / new_avg
+
 
     def set_last_update(self):
         self.last_update = proj_utils.get_date()
