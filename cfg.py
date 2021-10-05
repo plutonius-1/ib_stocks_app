@@ -8,6 +8,7 @@ import time
 import pickle
 import threading
 import logging
+import numpy as np
 
 ### GENERAL KEYWORDS ###
 
@@ -16,6 +17,7 @@ HOST = "host"
 PORT = "port"
 CLIENTID = "clientId"
 LAST_UPDATED = "last_updated"
+TICKERS = "tickers"
 
 ### PATHS ###
 DATA_PATH           = "./data/"
@@ -26,6 +28,7 @@ COMPANY_ANALYSIS_PATH = DATA_PATH + "companies_analysis/"
 MARKET_RESEARCH_PATH  = DATA_PATH + "market_research/"
 DEEP_COMPERATIVE_PATH = DATA_PATH + "deep_comperative_analysis/"
 
+IB = "IB"
 IB_REQUEST_HISTORY_PATH = "./ib_req_histroy.pkl"
 IB_DATA_PATH       = RAW_DATA_PATH + "ib_data/"
 IB_PROCESSED_PATH  = PROCESSED_DATA_PATH + "ib_data/"
@@ -39,36 +42,6 @@ SIC_DICIONARY_PATH = SICS_DIR_PATH + "dictionary.pkl"
 
 ##################
 SNAPSHOT_POSTFIX = "_snapshot.xml"
-
-
-## IbTWS stuff ##
-GET_FUNDUMENTALS = "fundumentals"
-IBTWS_FUNCTIONS = [GET_FUNDUMENTALS]
-IB_MAX_REQUESTS_PER_SEC = 50
-IB_MAX_REQUESTS_PER_10_MIN = 60
-#################
-
-### PROCESSED XML FILES POSTFIX ###
-FUND_REQ_TYPES_DICT = {
-    "ReportsFinStatements" : "financial_statements.xml",
-    "ReportSnapshot"       : "snapshot.xml",
-    "ReportsFinSummary"    : "financial_summary.xml",
-    "RESC"                 : "analysts.xml"
-}
-
-
-
-PROCESSED_FUNDAMENTAL_XML = "_processed_fundamental"
-PROCESSED_SNAPSHOT_XML    = "_processed_snapshot"
-PROCESSED_FINSUMMERY_XML  = "_processed_finsummery"
-PROCESSED_OVERVIEW_XML    = "_processed_overview"
-
-### GENERAL ###
-FUNDAMENTALS = "fundamentals"
-SNAPSHOT     = "snapshot"
-
-
-###########################
 
 ### RATIOS CONTS ###
 MKTCAP    = "MKTCAP"
@@ -93,6 +66,38 @@ COMPARISON_PARAMS = [MKTCAP, VOL10DAVG, EV, TTMREVPS, QBVPS, QCSHPS, TTMCFSHR,
 MKTCAP_TOTAL = "MKTCAP_TOTAL"
 MKTSHARE     = "MKTSHARE"
 
+## IbTWS stuff ##
+GET_FUNDUMENTALS = "fundumentals"
+IBTWS_FUNCTIONS = [GET_FUNDUMENTALS]
+IB_MAX_REQUESTS_PER_SEC = 50
+IB_MAX_REQUESTS_PER_10_MIN = 60
+IB_COMPARISON_PARAMS = [MKTCAP, VOL10DAVG, EV, TTMREVPS, QBVPS, QCSHPS, TTMCFSHR,
+                          TTMDIVSHR,TTMGROSMGN, TTMROEPCT, TTMPR2REV, PEEXCLXOR, PRICE2BK]
+#################
+
+### PROCESSED XML FILES POSTFIX ###
+FUND_REQ_TYPES_DICT = {
+    "ReportsFinStatements" : "financial_statements.xml",
+    "ReportSnapshot"       : "snapshot.xml",
+    "ReportsFinSummary"    : "financial_summary.xml",
+    "RESC"                 : "analysts.xml"
+}
+
+
+
+PROCESSED_FUNDAMENTAL_XML = "_processed_fundamental"
+PROCESSED_SNAPSHOT_XML    = "_processed_snapshot"
+PROCESSED_FINSUMMERY_XML  = "_processed_finsummery"
+PROCESSED_OVERVIEW_XML    = "_processed_overview"
+
+### GENERAL ###
+FUNDAMENTALS = "fundamentals"
+SNAPSHOT     = "snapshot"
+
+
+###########################
+
+
 ## GENERAL CONSTS ##
 ANALYZE = "analyze"
 Q       = "Q"
@@ -108,3 +113,7 @@ re_date_format = re.compile(RE_DATE_FORMAT)
 DEFAULT_OBJECT_LAST_UPDATE = "0000-00-00"
 DEFAULT_IB_REQ_HISTORY_DICT = {"LAST_REQ_TIME":None,
                                "REQS":IB_MAX_REQUESTS_PER_10_MIN}
+
+SOURCES_COMPER_PARAMS = {
+    IB : IB_COMPARISON_PARAMS
+}

@@ -118,6 +118,12 @@ def should_update_object(old_date, new_date, time_threshuld):
         return True
     return False
 
+def get_sign(val):
+    try:
+        assert type(val) is float or type(val) is int
+        return val > 0.0
+    except:
+        return None
 
 def get_company_cik(ticker : str):
     CIK_RE = re.compile(r'.*CIK=(\d{10}).*')

@@ -196,13 +196,6 @@ class Industry_c:
                 self.tickers[ticker].add_data_to_analyzed_data(param + "_Rating", tick_rating)
 
         # calc industry period data
-        # get a demo of a statement
-        # for t in self.tickers.values():
-            # statements = t.get_statements_df()
-            # for s in statements.values():
-                # if s.empty:
-                    # continue
-            # break
         statements = {}
         for t in self.tickers.values():
             t_stats = t.get_statements_df()  # returns bal,inc,cas for Q and K
@@ -259,7 +252,7 @@ class Industry_c:
                 if (cfg.Q in name):
                     q_data.update({name : data})
                 else:
-                    k_data.update({name:data})
+                    k_data.update({name : data})
 
             ticker.update_q_tags_compare_to_industry(q_data)
             ticker.update_k_tags_compare_to_industry(k_data)
@@ -284,8 +277,22 @@ class Industry_c:
 
     def compare_val_to_avg(self, val_to_compare, avg):
         num_comps = len(self.tickers)
-        _sum = avg * num_comps
-        new_avg =(_sum - val_to_compare) / num_comps - 1
+
+        # get signs of values
+        avg_sign  = proj_utils.get_sign(avg)
+        val_sign  = proj_utils.get_sign(val_to_compare)
+
+        # OLD CODE
+        # _sum = avg * num_comps
+        # new_avg =(_sum - val_to_compare) / num_comps - 1
+        CONT HERE _------ how to deal with minus signs?????
+        # NEW CODE
+        _sum    = avg * num_comps
+        new_avg = (abs(_sum) - abs(val_to_compare)) / num_comps - 1
+
+        # compare signs:
+        if not (new_avg > 0.0 and avg_sign > 0.0):
+            new_avg *= -1
         return val_to_compare / new_avg
 
 

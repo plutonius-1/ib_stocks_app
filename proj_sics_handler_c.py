@@ -5,7 +5,8 @@ import proj_utils
 import proj_sec_scraping_utils
 import proj_snapshotXmlReader
 import proj_finStatementsXmlReader
-from proj_industry_c import Industry_c
+#from proj_industry_c import Industry_c
+from proj_industry_c_v2 import Industry_c
 from cfg import os
 from cfg import pd
 from cfg import pickle
@@ -174,11 +175,12 @@ class Sics_handler_c:
                           }
             # update the local dict copy
             if (fundumentals_obj != None and snapshot_obj != None):
-                industry.add_ticker_data(ticker = ticker, ticker_data = ticker_data)
+                industry.add_ticker_data(ticker = ticker, ticker_data = ticker_data, source = cfg.IB) # TODO - fix the "source" issue to include other sources
         industry.set_last_update()
 
         # analyze industry after all tickers are add
-        industry.analyze_industry_after_tickers_are_added()
+        # industry.analyze_industry_after_tickers_are_added()
+        industry.calc_after_tickers_added()
         local_dict_copy[sic] = industry
         self.save_sic_dictionary(local_dict_copy)
 
