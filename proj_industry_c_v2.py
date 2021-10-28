@@ -2,6 +2,19 @@ import cfg
 import proj_utils
 from cfg import pd
 from proj_ticker_data_c_v2 import Ticker_data_c
+from base_data_obj_c import Base_data_obj_c
+
+class Industry_data_obj_c(Base_data_obj_c):
+    def __init__(self):
+        self._name = "industry_data"
+        self.tickers_data = {} # by sources
+
+    def add_ticker_data(self):
+        pass
+
+    def get_ticker_data(self):
+        pass
+
 
 class Industry_c:
     def __init__(self, industry_name, SIC):
@@ -89,6 +102,9 @@ class Industry_c:
 
             ticker_obj_data = ticker_obj.get_analyzed_data()
             for source ,data in ticker_obj_data.items():
+
+                if source not in self.industry_data[cfg.TICKERS]:
+                    self.industry_data[cfg.TICKERS].update({source : {}})
 
             # add mktshare data
                 try:
