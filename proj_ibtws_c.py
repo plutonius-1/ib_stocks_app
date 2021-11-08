@@ -169,6 +169,11 @@ class IbTws(TestWrapper,
         self.save_general_file(reqId = reqId,
                                type_to_save = cfg.FINANCIALS,
                                data = data)
+
+    def scannerParameters(self, xml : str):
+        super().scannerParameters(xml)
+        open("scanner.xml", "w").write(xml)
+        print("ScannerParameters recived")
     ################################# End fundamentals overrides
 
 

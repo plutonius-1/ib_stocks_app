@@ -117,7 +117,11 @@ def main():
 
     research = proj_utils.input_header(msg = "\nReasearch a stocks? (Y/N)\n").lower()
     while research != YES and research != NO:
-        research = input("\nReasearch a stocks? (Y/N)\n").lower()
+        research = proj_utils.input_header(msg = "\nReasearch a stocks? (Y/N)\n").lower()
+
+    # scanner = proj_utils.input_header(msg = "\nGet scanner params(Y/N)\n").lower()
+    # while scanner != YES and scanner != NO:
+        # scanner = proj_utils.input_header(msg = "\nGet scanner params(Y/N)\n").lower()
 
     # get list of stocks
     if (research == YES):
@@ -136,9 +140,11 @@ def main():
 
         app.research_stocks(stocks_)
 
+    # elif scanner == YES:
+        # app.ib_api.reqScannerParameters()
+
     else:
         pass
-
 
 
 if __name__ == "__main__":

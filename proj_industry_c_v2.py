@@ -21,9 +21,11 @@ class Industry_c:
         self.industry_name = industry_name
         self.SIC           = SIC
         self.tickers        = {}
+        self.sources        = []
         self.industry_data  = {cfg.TICKERS : {},
                                cfg.MKTCAP_TOTAL : 0}    # initilize with empty tickers_dic -holds each tickers ranks and other comperative data
         self.industry_avg_data = {}
+        self.industry_pct_change_data = {"IB":{}}
         self.industry_period_data = {cfg.K : {},
                                     cfg.Q : {}} # {K : yearly data,  Q : quarter data}
         self.last_update    = cfg.DEFAULT_OBJECT_LAST_UPDATE
@@ -50,7 +52,7 @@ class Industry_c:
 
         # process data after all tickers added
         self.calc_ranking_data()
-
+        self.calc_ind_pct_avg_change()
     ## Gets ##
 
     def get_companies_by_market_cap(self):
@@ -67,12 +69,18 @@ class Industry_c:
         This means that every time we estimate a ticker, we need to delete the current data in the di        citonary of the SIC and refresh all that SICs data
         """
 
-        # calc sum(w_i * x_i) - no need to devide by sum(w_i) since it is normilsed
+        # calc sum(w_i * x_i) - no need to devide by sum(w_i) since it is normilsed already
         norm_avg = 0.0
 
         for ticker in self.tickers:
             ticker_analyzed_data = ticker.get_analyzed_data()
+            ticker_pct_data      = ticker.get_pct_change_period_data() # {source : {inc : data_obj, bal : data_obj, cas : data_obj}}
+
+            # weight_i is the pct of the market share of each ticker
             w_i = ticker_analyzed_data[cfg.MKTSHARE]
+
+
+
         #x_tag =
 
         return None
@@ -109,13 +117,13 @@ class Industry_c:
             # add mktshare data
                 try:
                     mktshare = float(data[cfg.MKTCAP]) / float(self.industry_data[cfg.MKTCAP_TOTAL])
-                    # ticker_obj.add_data_to_analyzed_data(cfg.MKTSHARE, mktshare)
+                    ticker_obj.add_data_to_analyzed_data(source, cfg.MKTSHARE, mktshare)
 
                     # add makret share data to self- intdustry data
                     try:
-                        self.industry_data[cfg.TICKERS][source].update({cfg.MKTSHARE : mktshare})
+                        self.industry_data[cfg.TICKERS][source][ticker_obj.get_ticker()].update({cfg.MKTSHARE : mktshare})
                     except:
-                        self.industry_data[cfg.TICKERS].update({source : {cfg.MKTSHARE : mktshare}})
+                        self.industry_data[cfg.TICKERS].update({source : {ticker_obj.get_ticker() : {cfg.MKTSHARE : mktshare}}})
                 except:
                     pass
 
@@ -129,6 +137,7 @@ class Industry_c:
             temp_df = temp_df.sort_values(param, ascending = False)
             ratings = dict(zip(temp_df.index, [i for i in range(len(temp_df.index))]))
             for ticker, tick_rating in ratings.items():
+                tag = param + "_Rating"
                 self.tickers[ticker].add_data_to_analyzed_data(param + "_Rating", tick_rating)
 
     def calc_ranking_data(self):
@@ -141,8 +150,79 @@ class Industry_c:
                 temp_df = temp_df.sort_values(param, ascending = False)
                 ratings = dict(zip(temp_df.index, [i for i in range(len(temp_df.index))]))
                 for ticker, tick_rating in ratings.items():
-                    print(ticker,tick_rating)
-                    self.tickers[ticker].add_data_to_analyzed_data(source, param + "_Rating", tick_rating)
+                    tag = param + "_Rating"
+                    self.tickers[ticker].add_data_to_analyzed_data(source, tag, tick_rating)
+                    try:
+                        self.industry_data[cfg.TICKERS][source][ticker].update({tag : tick_rating})
+                    except:
+                        self.industry_data[cfg.TICKERS][source].update({ticker : {tag : tick_rating}})
+
+    def calc_ind_pct_avg_change(self):
+
+        def _add_line_to_ind_pct_change(main_df : pd.DataFrame,
+                                        line    : pd.Series):
+            temp_df = main_df
+            if (line.name) in temp_df.index:
+                temp_df.loc[line.name] += line
+                return temp_df
+            else:
+                return temp_df.append(line)
+
+        def _get_original_df(self, data_obj : Base_data_obj_c, source : str):
+            if not (data_obj.get_name() in self.industry_pct_change_data[source]):
+                new_data_obj = Base_data_obj_c()
+                new_data_obj.set_name(data_obj.get_name())
+                new_data_obj.set_frequancy(data_obj.get_frequancy())
+                new_data_obj.set_data(pd.DataFrame())
+                try:
+                    self.industry_pct_change_data[source].update({new_data_obj.get_name() : new_data_obj})
+                except:
+                    self.industry_pct_change_data.update({source : {new_data_obj.get_name() : new_data_obj}})
+
+            return self.industry_pct_change_data[source][data_obj.get_name()]
+
+        def _put_original_data(self, data_obj : Base_data_obj_c, source : str):
+            self.industry_pct_change_data[source][data_obj.get_name()] = data_obj
+
+
+        for ticker in self.tickers:
+
+            # get the ticker precent change data
+            pct_data = self.tickers[ticker].get_pct_change_period_data()
+
+            for source, statements in pct_data.items():
+                for data_type, data_obj in statements.items():
+
+                    # get the original df
+                    original_data_obj = _get_original_df(self, data_obj, source)
+                    original_df = original_data_obj.get_data()
+
+                    # get weight and multply each df
+                    ticker_weight = self.tickers[ticker].get_analyzed_data()[source][cfg.MKTSHARE]
+
+                    df = data_obj.get_data()
+
+                    # augment the df to be normialsed by weight
+                    df = df*ticker_weight
+
+                    freq = data_obj.get_frequancy()
+                    for line in df.index:
+                        temp_line = df.loc[line]
+                        original_df = _add_line_to_ind_pct_change(original_df, temp_line)
+                    original_data_obj.set_data(original_df)
+                    _put_original_data(self, original_data_obj, source)
+        return
 
     def set_last_update(self):
         self.last_update = proj_utils.get_date()
+
+    def get_industry_pct_change_data(self):
+        return self.industry_pct_change_data
+
+    def add_source(self, src : str):
+        if src not in self.sources:
+            self.sources.append(src.upper())
+
+    def get_sources(self):
+        return self.sources
+

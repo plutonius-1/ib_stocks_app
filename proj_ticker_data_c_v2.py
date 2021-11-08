@@ -39,13 +39,15 @@ class Ticker_data_c:
                 fundametals_K = raw_data["fundamentals"]["K_data"]
                 for statement in fundametals_Q:
                     data_obj = base_data_c()
-                    data_obj.set_name(statement)
+                    name = statement + "_" + cfg.Q
+                    data_obj.set_name(name)
                     data_obj.set_data(fundametals_Q[statement])
                     data_obj.set_frequancy(cfg.Q)
                     add_data_obj(data_obj, source)
 
                 for statement in fundametals_K:
                     data_obj = base_data_c()
+                    name = statement + "_" + cfg.K
                     data_obj.set_name(statement)
                     data_obj.set_data(fundametals_K[statement])
                     data_obj.set_frequancy(cfg.K)
@@ -57,6 +59,13 @@ class Ticker_data_c:
             set_raw_statement_by_source(source, raw_data)
 
     def set_pct_change_data(self):
+
+        def add_data_obj(data_obj, source):
+            try:
+                self._pct_change_period_data[source].update({data_obj.get_name() : data_obj})
+            except:
+                self._pct_change_period_data.update({source : {data_obj.get_name(): data_obj}})
+
         for source, statements in self._raw_statements.items(): # source : {name : data_obj}
             for name, s in statements.items(): # {name : data_obj}
                 df = s.get_data()
@@ -77,8 +86,7 @@ class Ticker_data_c:
                     data_obj.set_name(df_name)
                     data_obj.set_frequancy(df_freq)
                     data_obj.set_data(pct_df)
-
-                self._pct_change_period_data.update({source : {df_name : data_obj}})
+                add_data_obj(data_obj, source)
 
         return None
 
@@ -105,9 +113,6 @@ class Ticker_data_c:
                     pass
         return None
 
-    def get_analyzed_data(self):
-        return self._analyzed_data
-
     ## Utils ##
     def _calc_change_over_period(self, series : cfg.pd.Series):
         ser = series.sort_index()
@@ -117,3 +122,15 @@ class Ticker_data_c:
         return pct_change
 
 
+    ## gets ##
+    def get_ticker(self):
+        return self._ticker
+
+    def get_analyzed_data(self):
+        return self._analyzed_data
+
+    def get_pct_change_period_data(self):
+        return self._pct_change_period_data
+
+    def get_raw_statements(self):
+        return self._raw_statements

@@ -206,10 +206,15 @@ class finStatementsXmlReader_c:
 
         if InterimPeriods == None: raise "did not find InterimPeriods in financial statements"
 
+        #### temp date fix ####
+        d = 0
+        #######################
         for InterimPeriod in InterimPeriods:
 
             date = InterimPeriod.attrib["EndDate"]
 
+            date =  str(d)
+            d += 1
 
             for i in InterimPeriod:
 
@@ -220,11 +225,17 @@ class finStatementsXmlReader_c:
                 temp_data = self._prase_statement(i, date, mapping_dic, statemet_type)
                 parsed_data_Q[statemet_type].update({date : temp_data[statemet_type][date]})
 
+        #### temp date fix ####
+        d = 0
+        #######################
         for AnnualPeriod in AnnualPeriods:
 
             date = AnnualPeriod.attrib["EndDate"]
 
-
+            ###### temporary date fix #######
+            date =  str(d)
+            d += 1
+            #################################
             for i in AnnualPeriod:
 
                 # get the type first (cash, balance, income)
