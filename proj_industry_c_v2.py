@@ -52,7 +52,12 @@ class Industry_c:
 
         # process data after all tickers added
         self.calc_ranking_data()
-        self.calc_ind_pct_avg_change()
+
+        # calc the WEIGHTED avarge pct change for each of the statemnts
+        # Note - each statement is multiplied by the relative market share of each ticker
+        self._calc_ind_pct_avg_change()
+
+
     ## Gets ##
 
     def get_companies_by_market_cap(self):
@@ -157,7 +162,7 @@ class Industry_c:
                     except:
                         self.industry_data[cfg.TICKERS][source].update({ticker : {tag : tick_rating}})
 
-    def calc_ind_pct_avg_change(self):
+    def _calc_ind_pct_avg_change(self):
 
         def _add_line_to_ind_pct_change(main_df : pd.DataFrame,
                                         line    : pd.Series):
@@ -212,6 +217,26 @@ class Industry_c:
                     original_data_obj.set_data(original_df)
                     _put_original_data(self, original_data_obj, source)
         return
+
+
+    def get_ticker_relatives(self,
+                             ticker : str)
+        try:
+            ticker_data = self.tickers[ticker].get_pct_change_period_data() # returns {source : {data ...}}
+
+            # per source
+            for source, statements in ticker_data.items():
+                # iterate over all pct change statements and compare to inudstry avg
+                for statement_name ,statement_obj in statements.items():
+                    tick_df = statement_obj.get_data()
+                    assert
+                    inda_df = self.get_industry_pct_change_data()[source][statement_name]
+
+
+
+        except:
+            print(f"ticker :{ticker} not in industry")
+            return None
 
     def set_last_update(self):
         self.last_update = proj_utils.get_date()
