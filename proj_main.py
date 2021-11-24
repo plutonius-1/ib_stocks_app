@@ -112,8 +112,9 @@ def main():
     host1 = "192.168.0.152"
     dunbros = "10.10.4.45"
     host3 = "10.1.10.150"
+    LT = "172.20.168.199"
 
-    app = App_c(host = host1, port = 7496, clientId = 10)
+    app = App_c(host = LT, port = 7496, clientId = 10)
 
     research = proj_utils.input_header(msg = "\nReasearch a stocks? (Y/N)\n").lower()
     while research != YES and research != NO:
