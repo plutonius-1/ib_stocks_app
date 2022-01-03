@@ -221,6 +221,27 @@ class Industry_c:
 
     def get_ticker_relatives(self,
                              ticker : str):
+
+        def comp_valus(base_val, tick_val):
+                if (pd.isna(tick_val) or (pd.isna(base_val))):
+                    return pd.np.na
+
+                if ((tick_val > 0.0) and (base_val > 0)):
+                    return tick_val - base_val
+
+
+                elif ((tick_val < 0) and (base_val < 0)):
+                    if (tick_val > base_val):
+                        return abs((base_val - tick_val))
+                    else:
+                        return tick_val - base_val
+
+                else:
+                    if ((tick_val > 0) and (base_val < 0)):
+                        return abs(tick_val + base_val)
+                    else:
+                        return tick_val + base_val
+
         try:
             ticker_data = self.tickers[ticker].get_pct_change_period_data() # returns {source : {data ...}}
 
@@ -228,8 +249,16 @@ class Industry_c:
             for source, statements in ticker_data.items():
                 # iterate over all pct change statements and compare to inudstry avg
                 for statement_name ,statement_obj in statements.items():
+
+                    diff_statement = statement_obj.get_data()
                     tick_df = statement_obj.get_data()
-                    inda_df = self.get_industry_pct_change_data()[source][statement_name]
+
+                    assert not tick_df.empty, f"{ticker} - {statement_name} is empty!"
+
+                    # get relevant industry DF
+                    indu_df = self.get_industry_pct_change_data()[source][statement_name]
+
+
 
 
 
