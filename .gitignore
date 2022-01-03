@@ -21,3 +21,5 @@ SICS/*
 ib_data/*
 data/*
 token
+ibapi _backup/
+test*

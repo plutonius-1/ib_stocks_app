@@ -69,6 +69,7 @@ class finStatementsXmlReader_c:
             self.save_obj(data, path + name) # saves as pkl
             return data
         except:
+            print('in here shit')
             return {}
 
     def save_obj(self, obj, name ):
@@ -148,7 +149,9 @@ class finStatementsXmlReader_c:
                          statement,
                          date,
                          mapping_dic : dict,
-                         sheet_type : str):
+                         sheet_type : str,
+                         date_str : str):
+
 
         statement_type = statement.attrib["Type"]
 
@@ -166,7 +169,7 @@ class finStatementsXmlReader_c:
                 actual_name = self._find_code_name_mapping(sheet_type, code_name, mapping_dic)
                 actual_name = actual_name.lower()
                 res[statement_type][date].update({actual_name:float(line.text)})
-
+        res[statement_type][date].update({'date':date_str})
         return res
 
 
@@ -213,7 +216,7 @@ class finStatementsXmlReader_c:
 
             date = InterimPeriod.attrib["EndDate"]
 
-            date =  str(d)
+            date_index =  str(d)
             d += 1
 
             for i in InterimPeriod:
@@ -222,9 +225,11 @@ class finStatementsXmlReader_c:
                 statemet_type = i.attrib["Type"]
 
                 # general statement prase
-                temp_data = self._prase_statement(i, date, mapping_dic, statemet_type)
-                parsed_data_Q[statemet_type].update({date : temp_data[statemet_type][date]})
+                temp_data = self._prase_statement(i, date_index, mapping_dic, statemet_type, str(date))
+                parsed_data_Q[statemet_type].update({date_index : temp_data[statemet_type][date_index]})
 
+                # if date not in parsed_data_Q[statement_type][date_index].keys():
+                    # parsed_data_Q[statemet_type][date_index].update({'date' : str(date)})
         #### temp date fix ####
         d = 0
         #######################
@@ -233,7 +238,7 @@ class finStatementsXmlReader_c:
             date = AnnualPeriod.attrib["EndDate"]
 
             ###### temporary date fix #######
-            date =  str(d)
+            date_index =  str(d)
             d += 1
             #################################
             for i in AnnualPeriod:
@@ -242,8 +247,11 @@ class finStatementsXmlReader_c:
                 statemet_type = i.attrib["Type"]
 
                 # general statement prase
-                temp_data = self._prase_statement(i, date, mapping_dic, statemet_type)
-                parsed_data_K[statemet_type].update({date : temp_data[statemet_type][date]})
+                temp_data = self._prase_statement(i, date_index, mapping_dic, statemet_type, str(date))
+                parsed_data_K[statemet_type].update({date_index : temp_data[statemet_type][date_index]})
+
+                # if date not in parsed_data_K[statement_type][date_index].keys():
+                    # parsed_data_Q[statemet_type][date_index].update({'date' : str(date)})
 
 
         # df = pd.DataFrame(data = parsed_data["BAL"])

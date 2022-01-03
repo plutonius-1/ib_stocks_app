@@ -16,6 +16,7 @@ from ibapi.execution import ExecutionFilter
 from ibapi.commission_report import CommissionReport
 from ibapi.ticktype import * # @UnusedWildImport
 from ibapi.tag_value import TagValue
+from dateutil import parser as datetime_parser
 
 from ibapi.account_summary_tags import *
 import proj_req_id_handler_c
@@ -73,6 +74,8 @@ class IbTws(TestWrapper,
         TestWrapper.__init__(self)
         TestClient.__init__(self, wrapper = self)
         self.id_handler = proj_req_id_handler_c.Req_id_handler_c()
+
+        self._newsProviders = None
 
         # local consts
         self.TICKER_KEY = "ticker"
@@ -146,6 +149,87 @@ class IbTws(TestWrapper,
             self.reqFundamentalData(reqIds[2], contract, "ReportsFinSummary", [])
             self.reqFundamentalData(reqIds[3], contract, "RESC",[])
             # self.reqFundamentalData(reqIds[4], contract, "Ratios", [])
+
+        elif (function == cfg.GET_HISTORICAL_DATA):
+
+            ticker = kwargs[self.TICKER_KEY]
+            contract = self.make_us_stk_contract(ticker)
+
+            durationUnits = kwargs[cfg.DURATION_UNITS_KW]
+            duration      = kwargs[cfg.DURATION_KW]
+
+            # Duration Processing #
+            durationUnits_time_delta = {"S" : datetime.timedelta(days=int(duration)),
+                                        "D" : datetime.timedelta(seconds=int(duration)),
+                                        "W" : datetime.timedelta(weeks=int(duration)),
+                                        "M" : datetime.timedelta(weeks=(int(duration) * 4)),
+                                        "Y" : datetime.timedelta(weeks=(int(duration) * 52))}
+            queryTime = (datetime.datetime.today() - durationUnits_time_delta[durationUnits]).strftime("%Y%m%d %H:%M:%S")
+
+            # Bars Processing #
+            barsNum      = kwargs[cfg.BARS_NUM_KW]
+            barSizeUnits = kwargs[cfg.BARSIZE_SETTING_KW]
+            if (barSizeUnits in ["sec","min","hour"] and (int(barsNum) > 1)):
+                barSizeUnits += "s"
+
+
+
+            reqIds = [self.id_handler.register_outgoing_req(historical = True)]
+            super().reqHistoricalData(
+                reqId = reqIds[0],
+                contract = contract,
+                endDateTime = queryTime,
+                durationStr = f"{duration} {durationUnits}",
+                barSizeSetting = f"{barsNum} {barSizeUnits}",
+                whatToShow = kwargs[cfg.WHAT_TO_KNOW_KW],
+                useRTH = 0,
+                formatDate = 1,
+                keepUpToDate = False,
+                chartOptions = []) # TODO add the TRUE case option as well
+
+        elif (function == cfg.GET_NEWS_PROVIDERS):
+            print("Asking for news providers...")
+            self.reqNewsProviders()
+            while self._newsProviders == None:
+                cfg.time.sleep(1)
+
+        elif (function == cfg.GET_HISTORICAL_NEWS):
+
+            # define ticker
+            ticker = kwargs[self.TICKER_KEY]
+
+            # First update the local copy of newProviders object
+            self.call_function(cfg.GET_NEWS_PROVIDERS)
+            # self.wait_for_api_task("Wating to recive news providers")
+            cfg.time.sleep(10)
+
+            # also get the contract details for contract number
+            # note that GET_CONTRACT_DETAILS has a wait task inside
+            conId = self.call_function(cfg.GET_CONTRACT_DETAILS, ticker = ticker).conId
+
+            # prepre the rest needed parametrs
+            # according to spec providers should be "+" seperated list
+            newsProvidersCodes = "+".join([str(i.code) for i in self._newsProviders])
+            startDate = self.format_date_time(kwargs[cfg.START_DATE_KW])
+            endDate   = self.format_date_time(kwargs[cfg.END_DATE_KW])
+            reqIds = [self.id_handler.register_outgoing_req(historical = True)]
+            super().reqHistoricalNews(
+                reqId = reqIds[0],
+                conId = conId,
+                providerCodes = newsProvidersCodes,
+                startDateTime = startDate,
+                endDateTime   = endDate,
+                totalResults  = 300,
+                historicalNewsOptions = []
+            )
+
+        elif (function == cfg.GET_CONTRACT_DETAILS):
+            ticker   = kwargs[self.TICKER_KEY]
+            contract = self.make_us_stk_contract(ticker)
+            reqIds = [self.id_handler.register_outgoing_req(historical = True)]
+            cd = self.reqContractDetails(reqIds[0], contract)
+            return cd
+
         else:
             pass
 
@@ -174,6 +258,48 @@ class IbTws(TestWrapper,
         super().scannerParameters(xml)
         open("scanner.xml", "w").write(xml)
         print("ScannerParameters recived")
+
+    ### Historical ###
+    def historicalData(self, reqId:int, bar: BarData):
+        print("HistoricalData. ReqId:", reqId, "BarData.", bar)
+
+    ### News overrides ###
+    def reqNewsProviders(self):
+        super().reqNewsProviders()
+        return
+
+    def newsProviders(self, newsProviders:ListOfNewsProviders):
+        print(f'Recived News Providers: {newsProviders}')
+        self._newsProviders = newsProviders
+
+
+    def historicalNews(self, requestId:int, time:str, providerCode:str, articleId:str, headline:str):
+        print(f"HISTORICAL HEAD LINE:\ntime{time}\narticleId:{articleId}\nheadline:{headline}")
+
+    ### Contracts overrides ###
+    def reqContractDetails(self, reqId:int, contract: Contract):
+        super().reqContractDetails(reqId = reqId,
+                                   contract = contract)
+
+        self._temp_contract_detail_q = []
+        self.wait_for_api_task(msg = "sent request for contract details - waiting for response")
+        cfg.time.sleep(1)
+        assert len(self._temp_contract_detail_q) == 1
+        cd = self._temp_contract_detail_q.pop()
+        return cd.contract
+
+
+
+    def contractDetails(self, reqId : int, contractDetails : ContractDetails):
+        print("Recived Contract details")
+        assert len(self._temp_contract_detail_q) == 0
+        self._temp_contract_detail_q.append(contractDetails)
+
+
+        # delete from reqIds bank TODO - make this into a function!
+        #self.reqCallBackHandler(str(reqIdKey))
+        self.id_handler.response_id(reqId)
+        return contractDetails
     ################################# End fundamentals overrides
 
 
@@ -249,3 +375,11 @@ class IbTws(TestWrapper,
                 print("ids left: ", self.id_handler.outgoing_reqs)
             cfg.time.sleep(1)
             e_time += 1
+
+    def format_date_time(self, date : str, pattern = "%Y-%m-%d %H:%M%S.0"):
+        formated_date = datetime_parser.parse(date)
+        formated_date = formated_date.strftime(pattern)
+        return formated_date
+
+    def get_news_providers(self):
+        return self._newsProviders

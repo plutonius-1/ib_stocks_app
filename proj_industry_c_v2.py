@@ -220,7 +220,7 @@ class Industry_c:
 
 
     def get_ticker_relatives(self,
-                             ticker : str)
+                             ticker : str):
         try:
             ticker_data = self.tickers[ticker].get_pct_change_period_data() # returns {source : {data ...}}
 
@@ -229,7 +229,6 @@ class Industry_c:
                 # iterate over all pct change statements and compare to inudstry avg
                 for statement_name ,statement_obj in statements.items():
                     tick_df = statement_obj.get_data()
-                    assert
                     inda_df = self.get_industry_pct_change_data()[source][statement_name]
 
 

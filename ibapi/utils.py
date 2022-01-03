@@ -13,13 +13,14 @@ import sys
 import logging
 import inspect
 
-from ibapi.common import UNSET_INTEGER, UNSET_DOUBLE, UNSET_LONG
+from decimal import Decimal
+from ibapi.common import UNSET_INTEGER, UNSET_DOUBLE, UNSET_LONG, UNSET_DECIMAL
 
 
 logger = logging.getLogger(__name__)
 
 
-# I use this just to visually emphasize it's a wrapper overriden method
+# I use this just to visually emphasize it's a wrapper overridden method
 def iswrapper(fn):
     return fn
 
@@ -28,6 +29,11 @@ class BadMessage(Exception):
     def __init__(self, text):
         self.text = text
 
+class ClientException(Exception):
+    def __init__(self, code, msg, text):
+        self.code = code
+        self.msg = msg
+        self.text = text
 
 class LogFunction(object):
     def __init__(self, text, logLevel):
@@ -57,6 +63,8 @@ def setattr_log(self, var_name, var_value):
 
 
 SHOW_UNSET = True
+
+
 def decode(the_type, fields, show_unset = False):
     try:
         s = next(fields)
@@ -64,6 +72,12 @@ def decode(the_type, fields, show_unset = False):
         raise BadMessage("no more fields")
 
     logger.debug("decode %s %s", the_type, s)
+    
+    if the_type is Decimal:
+        if s is None or len(s) == 0 or s.decode() == "2147483647" or s.decode() == "9223372036854775807" or s.decode() == "1.7976931348623157E308":
+            return UNSET_DECIMAL
+        else:
+            return the_type(s.decode())
 
     if the_type is str:
         if type(s) is str:
@@ -96,7 +110,6 @@ def decode(the_type, fields, show_unset = False):
     return n
 
 
-
 def ExerciseStaticMethods(klass):
 
     import types
@@ -107,11 +120,17 @@ def ExerciseStaticMethods(klass):
             print("Exercising: %s:" % var)
             print(var())
             print()
-
+            
+           
 def floatToStr(val):
-    return str(val) if val != UNSET_DOUBLE else "";
+    return str(val) if val != UNSET_DOUBLE else ""
 
+ 
 def longToStr(val):
-    return str(val) if val != UNSET_LONG else "";
+    return str(val) if val != UNSET_LONG else ""
 
+def isAsciiPrintable(val):
+    return all(ord(c) >=32 and ord(c) < 128 for c in val)
 
+def decimalMaxString(val: Decimal):
+    return "{:f}".format(val) if val != UNSET_DECIMAL else ""

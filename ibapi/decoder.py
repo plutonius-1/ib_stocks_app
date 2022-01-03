@@ -45,7 +45,6 @@ class Decoder(Object):
         self.wrapper = wrapper
         self.serverVersion = serverVersion
         self.discoverParams()
-        #self.printParams()
 
 
     def processTickPriceMsg(self, fields):
@@ -55,7 +54,7 @@ class Decoder(Object):
         reqId = decode(int, fields)
         tickType = decode(int, fields)
         price = decode(float, fields)
-        size = decode(int, fields) # ver 2 field
+        size = decode(Decimal, fields) # ver 2 field
         attrMask = decode(int, fields) # ver 3 field
 
         attrib = TickAttrib()
@@ -89,6 +88,17 @@ class Decoder(Object):
             self.wrapper.tickSize(reqId, sizeTickType, size)
 
 
+    def processTickSizeMsg(self, fields):
+        next(fields)
+        decode(int, fields)
+
+        reqId = decode(int, fields)
+        sizeTickType = decode(int, fields)
+        size = decode(Decimal, fields)
+
+        if sizeTickType != TickTypeEnum.NOT_SET:
+            self.wrapper.tickSize(reqId, sizeTickType, size)
+
     def processOrderStatusMsg(self, fields):
 
         next(fields)
@@ -96,17 +106,8 @@ class Decoder(Object):
             decode(int, fields)
         orderId = decode(int, fields)
         status = decode(str, fields)
-
-        if self.serverVersion >= MIN_SERVER_VER_FRACTIONAL_POSITIONS:
-            filled = decode(float, fields)
-        else:
-            filled = decode(int, fields)
-
-        if self.serverVersion >= MIN_SERVER_VER_FRACTIONAL_POSITIONS:
-            remaining = decode(float, fields)
-        else:
-            remaining = decode(int, fields)
-
+        filled = decode(Decimal, fields)
+        remaining = decode(Decimal, fields)
         avgFillPrice = decode(float, fields)
 
         permId = decode(int, fields) # ver 2 field
@@ -127,7 +128,7 @@ class Decoder(Object):
     def processOpenOrder(self, fields):
 
         next(fields)
-        
+
         order = Order()
         contract = Contract()
         orderState = OrderState()
@@ -137,7 +138,7 @@ class Decoder(Object):
         else:
             version = self.serverVersion
 
-        
+
         OrderDecoder.__init__(self, contract, order, orderState, version, self.serverVersion)
 
         # read orderId
@@ -181,9 +182,9 @@ class Decoder(Object):
         OrderDecoder.decodeAllOrNone(self, fields)
         OrderDecoder.decodeMinQty(self, fields)
         OrderDecoder.decodeOcaType(self, fields)
-        OrderDecoder.decodeETradeOnly(self, fields)
-        OrderDecoder.decodeFirmQuoteOnly(self, fields)
-        OrderDecoder.decodeNbboPriceCap(self, fields)
+        OrderDecoder.skipETradeOnly(self, fields)
+        OrderDecoder.skipFirmQuoteOnly(self, fields)
+        OrderDecoder.skipNbboPriceCap(self, fields)
         OrderDecoder.decodeParentId(self, fields)
         OrderDecoder.decodeTriggerMethod(self, fields)
         OrderDecoder.decodeVolOrderParams(self, fields, True)
@@ -210,6 +211,9 @@ class Decoder(Object):
         OrderDecoder.decodeIsOmsContainers(self, fields)
         OrderDecoder.decodeDiscretionaryUpToLimitPrice(self, fields)
         OrderDecoder.decodeUsePriceMgmtAlgo(self, fields)
+        OrderDecoder.decodeDuration(self, fields)
+        OrderDecoder.decodePostToAts(self, fields)
+        OrderDecoder.decodeAutoCancelParent(self, fields, MIN_SERVER_VER_AUTO_CANCEL_PARENT)
 
         self.wrapper.openOrder(order.orderId, contract, order, orderState)
 
@@ -237,10 +241,7 @@ class Decoder(Object):
         if version >= 8:
             contract.tradingClass = decode(str, fields)
 
-        if self.serverVersion >= MIN_SERVER_VER_FRACTIONAL_POSITIONS:
-            position = decode(float, fields)
-        else:
-            position = decode(int, fields)
+        position = decode(Decimal, fields)
 
         marketPrice = decode(float, fields)
         marketValue = decode(float, fields)
@@ -261,7 +262,9 @@ class Decoder(Object):
     def processContractDataMsg(self, fields):
 
         next(fields)
-        version = decode(int, fields)
+        version = 8
+        if self.serverVersion < MIN_SERVER_VER_SIZE_RULES:
+            version = decode(int, fields)
 
         reqId = -1
         if version >= 3:
@@ -280,8 +283,8 @@ class Decoder(Object):
         contract.contract.tradingClass = decode(str, fields)
         contract.contract.conId = decode(int, fields)
         contract.minTick = decode(float, fields)
-        if self.serverVersion >= MIN_SERVER_VER_MD_SIZE_MULTIPLIER:
-            contract.mdSizeMultiplier = decode(int, fields)
+        if self.serverVersion >= MIN_SERVER_VER_MD_SIZE_MULTIPLIER and self.serverVersion < MIN_SERVER_VER_SIZE_RULES:
+            decode(int, fields) # mdSizeMultiplier - not used anymore
         contract.contract.multiplier = decode(str, fields)
         contract.orderTypes = decode(str, fields)
         contract.validExchanges = decode(str, fields)
@@ -289,7 +292,7 @@ class Decoder(Object):
         if version >= 4:
             contract.underConId = decode(int, fields)
         if version >= 5:
-            contract.longName = decode(str, fields)
+            contract.longName = decode(str, fields).encode().decode('unicode-escape') if self.serverVersion >= MIN_SERVER_VER_ENCODE_MSG_ASCII7 else decode(str, fields)
             contract.contract.primaryExchange = decode(str, fields)
         if version >= 6:
             contract.contractMonth = decode(str, fields)
@@ -325,13 +328,26 @@ class Decoder(Object):
         if self.serverVersion >= MIN_SERVER_VER_REAL_EXPIRATION_DATE:
             contract.realExpirationDate = decode(str, fields)
 
+        if self.serverVersion >= MIN_SERVER_VER_STOCK_TYPE:
+            contract.stockType = decode(str, fields)
+
+        if self.serverVersion >= MIN_SERVER_VER_FRACTIONAL_SIZE_SUPPORT and self.serverVersion < MIN_SERVER_VER_SIZE_RULES:
+            decode(Decimal, fields) # sizeMinTick - not used anymore
+
+        if self.serverVersion >= MIN_SERVER_VER_SIZE_RULES:
+            contract.minSize = decode(Decimal, fields)
+            contract.sizeIncrement = decode(Decimal, fields)
+            contract.suggestedSizeIncrement = decode(Decimal, fields)
+
         self.wrapper.contractDetails(reqId, contract)
 
 
     def processBondContractDataMsg(self, fields):
 
         next(fields)
-        version = decode(int, fields)
+        version = 6;
+        if self.serverVersion < MIN_SERVER_VER_SIZE_RULES:
+            version = decode(int, fields)
 
         reqId = -1
         if version >= 3:
@@ -357,8 +373,8 @@ class Decoder(Object):
         contract.contract.tradingClass = decode(str, fields)
         contract.contract.conId = decode(int, fields)
         contract.minTick = decode(float, fields)
-        if self.serverVersion >= MIN_SERVER_VER_MD_SIZE_MULTIPLIER:
-            contract.mdSizeMultiplier = decode(int, fields)
+        if self.serverVersion >= MIN_SERVER_VER_MD_SIZE_MULTIPLIER and self.serverVersion < MIN_SERVER_VER_SIZE_RULES:
+            decode(int, fields) # mdSizeMultiplier - not used anymore
         contract.orderTypes = decode(str, fields)
         contract.validExchanges = decode(str, fields)
         contract.nextOptionDate = decode(str, fields) # ver 2 field
@@ -385,6 +401,11 @@ class Decoder(Object):
 
         if self.serverVersion >= MIN_SERVER_VER_MARKET_RULES:
             contract.marketRuleIds = decode(str, fields)
+
+        if self.serverVersion >= MIN_SERVER_VER_SIZE_RULES:
+            contract.minSize = decode(Decimal, fields)
+            contract.sizeIncrement = decode(Decimal, fields)
+            contract.suggestedSizeIncrement = decode(Decimal, fields)
 
         self.wrapper.bondContractDetails(reqId, contract)
 
@@ -458,19 +479,14 @@ class Decoder(Object):
         execution.acctNumber = decode(str, fields)
         execution.exchange = decode(str, fields)
         execution.side = decode(str, fields)
-
-        if self.serverVersion >= MIN_SERVER_VER_FRACTIONAL_POSITIONS:
-                execution.shares = decode(float, fields)
-        else:
-                execution.shares = decode(int, fields)
-
+        execution.shares = decode(Decimal, fields)
         execution.price = decode(float, fields)
         execution.permId = decode(int, fields) # ver 2 field
         execution.clientId = decode(int, fields)  # ver 3 field
         execution.liquidation = decode(int, fields) # ver 4 field
 
         if version >= 6:
-            execution.cumQty = decode(float, fields)
+            execution.cumQty = decode(Decimal, fields)
             execution.avgPrice = decode(float, fields)
 
         if version >= 8:
@@ -506,8 +522,8 @@ class Decoder(Object):
             bar.high = decode(float, fields)
             bar.low = decode(float, fields)
             bar.close = decode(float, fields)
-            bar.volume = decode(int, fields)
-            bar.average = decode(float, fields)
+            bar.volume = decode(Decimal, fields)
+            bar.wap = decode(Decimal, fields)
 
             if self.serverVersion < MIN_SERVER_VER_SYNT_REALTIME_BARS:
                 decode(str, fields)
@@ -529,8 +545,8 @@ class Decoder(Object):
         bar.close = decode(float, fields)
         bar.high = decode(float, fields)
         bar.low = decode(float, fields)
-        bar.average = decode(float, fields)
-        bar.volume = decode(int, fields)
+        bar.wap = decode(Decimal, fields)
+        bar.volume = decode(Decimal, fields)
         self.wrapper.historicalDataUpdate(reqId, bar)
 
     def processRealTimeBarMsg(self, fields):
@@ -544,13 +560,15 @@ class Decoder(Object):
         bar.high = decode(float, fields)
         bar.low = decode(float, fields)
         bar.close = decode(float, fields)
-        bar.volume = decode(int, fields)
-        bar.wap = decode(float, fields)
+        bar.volume = decode(Decimal, fields)
+        bar.wap = decode(Decimal, fields)
         bar.count = decode(int, fields)
 
         self.wrapper.realtimeBar(reqId, bar.time, bar.open, bar.high, bar.low, bar.close, bar.volume, bar.wap, bar.count)
 
     def processTickOptionComputationMsg(self, fields):
+        version = self.serverVersion
+        tickAttrib = None
         optPrice = None
         pvDividend = None
         gamma = None
@@ -559,9 +577,14 @@ class Decoder(Object):
         undPrice = None
 
         next(fields)
-        version = decode(int, fields)
+        if self.serverVersion < MIN_SERVER_VER_PRICE_BASED_VOLATILITY:
+            version = decode(int, fields)
+
         reqId = decode(int, fields)
         tickTypeInt = decode(int, fields)
+
+        if self.serverVersion >= MIN_SERVER_VER_PRICE_BASED_VOLATILITY:
+            tickAttrib = decode(int, fields)
 
         impliedVol = decode(float, fields)
         delta = decode(float, fields)
@@ -598,7 +621,7 @@ class Decoder(Object):
             if undPrice == -1:             # -1 is the "not computed" indicator
                 undPrice = None
 
-        self.wrapper.tickOptionComputation(reqId, tickTypeInt, impliedVol,
+        self.wrapper.tickOptionComputation(reqId, tickTypeInt, tickAttrib, impliedVol,
             delta, optPrice, pvDividend, gamma, vega, theta, undPrice)
 
 
@@ -661,10 +684,7 @@ class Decoder(Object):
         if version >= 2:
             contract.tradingClass = decode(str, fields)
 
-        if self.serverVersion >= MIN_SERVER_VER_FRACTIONAL_POSITIONS:
-            position = decode(float, fields)
-        else:
-            position = decode(int, fields)
+        position = decode(Decimal, fields)
 
         avgCost = 0.
         if version >= 3:
@@ -692,7 +712,7 @@ class Decoder(Object):
         contract.currency = decode(str, fields)
         contract.localSymbol = decode(str, fields)
         contract.tradingClass = decode(str, fields)
-        position = decode(float, fields)
+        position = decode(Decimal, fields)
         avgCost = decode(float, fields)
         modelCode = decode(str, fields)
 
@@ -888,7 +908,7 @@ class Decoder(Object):
         for _ in range(numPoints):
             dataPoint = HistogramData()
             dataPoint.price = decode(float,fields)
-            dataPoint.count = decode(int,fields)
+            dataPoint.size = decode(Decimal,fields)
             histogram.append(dataPoint)
 
         self.wrapper.histogramData(reqId, histogram)
@@ -943,7 +963,7 @@ class Decoder(Object):
     def processPnLSingleMsg(self, fields):
         next(fields)
         reqId = decode(int, fields)
-        pos = decode(int, fields)
+        pos = decode(Decimal, fields)
         dailyPnL = decode(float, fields)
         unrealizedPnL = None
         realizedPnL = None
@@ -970,7 +990,7 @@ class Decoder(Object):
             historicalTick.time = decode(int, fields)
             next(fields) # for consistency
             historicalTick.price = decode(float, fields)
-            historicalTick.size = decode(int, fields)
+            historicalTick.size = decode(Decimal, fields)
             ticks.append(historicalTick)
 
         done = decode(bool, fields)
@@ -994,8 +1014,8 @@ class Decoder(Object):
             historicalTickBidAsk.tickAttribBidAsk = tickAttribBidAsk
             historicalTickBidAsk.priceBid = decode(float, fields)
             historicalTickBidAsk.priceAsk = decode(float, fields)
-            historicalTickBidAsk.sizeBid = decode(int, fields)
-            historicalTickBidAsk.sizeAsk = decode(int, fields)
+            historicalTickBidAsk.sizeBid = decode(Decimal, fields)
+            historicalTickBidAsk.sizeAsk = decode(Decimal, fields)
             ticks.append(historicalTickBidAsk)
 
         done = decode(bool, fields)
@@ -1018,7 +1038,7 @@ class Decoder(Object):
             tickAttribLast.unreported = mask & 2 != 0
             historicalTickLast.tickAttribLast = tickAttribLast
             historicalTickLast.price = decode(float, fields)
-            historicalTickLast.size = decode(int, fields)
+            historicalTickLast.size = decode(Decimal, fields)
             historicalTickLast.exchange = decode(str, fields)
             historicalTickLast.specialConditions = decode(str, fields)
             ticks.append(historicalTickLast)
@@ -1039,7 +1059,7 @@ class Decoder(Object):
         elif tickType == 1 or tickType == 2:
             # Last or AllLast
             price = decode(float, fields)
-            size = decode(int, fields)
+            size = decode(Decimal, fields)
             mask = decode(int, fields)
 
             tickAttribLast = TickAttribLast()
@@ -1054,8 +1074,8 @@ class Decoder(Object):
             # BidAsk
             bidPrice = decode(float, fields)
             askPrice = decode(float, fields)
-            bidSize = decode(int, fields)
-            askSize = decode(int, fields)
+            bidSize = decode(Decimal, fields)
+            askSize = decode(Decimal, fields)
             mask = decode(int, fields)
             tickAttribBidAsk = TickAttribBidAsk()
             tickAttribBidAsk.bidPastLow = mask & 1 != 0
@@ -1077,6 +1097,19 @@ class Decoder(Object):
 
         self.wrapper.orderBound(reqId, apiClientId, apiOrderId)
 
+    def processMarketDepthMsg(self, fields):
+        next(fields)
+        decode(int, fields)
+        reqId = decode(int, fields)
+
+        position = decode(int, fields)
+        operation = decode(int, fields)
+        side = decode(int, fields)
+        price = decode(float, fields)
+        size = decode(Decimal, fields)
+
+        self.wrapper.updateMktDepth(reqId, position, operation, side, price, size)
+
     def processMarketDepthL2Msg(self, fields):
         next(fields)
         decode(int, fields)
@@ -1087,7 +1120,7 @@ class Decoder(Object):
         operation = decode(int, fields)
         side = decode(int, fields)
         price = decode(float, fields)
-        size = decode(int, fields)
+        size = decode(Decimal, fields)
         isSmartDepth = False
 
         if self.serverVersion >= MIN_SERVER_VER_SMART_DEPTH:
@@ -1099,7 +1132,7 @@ class Decoder(Object):
 
     def processCompletedOrderMsg(self, fields):
         next(fields)
-        
+
         order = Order()
         contract = Contract()
         orderState = OrderState()
@@ -1178,6 +1211,27 @@ class Decoder(Object):
 
         self.wrapper.completedOrdersEnd()
 
+    def processReplaceFAEndMsg(self, fields):
+        next(fields)
+        reqId = decode(int, fields)
+        text = decode(str, fields)
+
+        self.wrapper.replaceFAEnd(reqId, text)
+
+    def processWshMetaDataMsg(self, fields):
+        next(fields)
+        reqId = decode(int, fields)
+        dataJson = decode(str, fields)
+
+        self.wrapper.wshMetaData(reqId, dataJson)
+
+    def processWshEventDataMsg(self, fields):
+        next(fields)
+        reqId = decode(int, fields)
+        dataJson = decode(str, fields)
+
+        self.wrapper.wshEventData(reqId, dataJson)
+
     ######################################################################
 
     def readLastTradeDate(self, fields, contract: ContractDetails, isBond: bool):
@@ -1242,7 +1296,7 @@ class Decoder(Object):
             if pname != "self":
                 logger.debug("field %s ", fields[fieldIdx])
                 try:
-                    arg = fields[fieldIdx].decode('UTF-8')
+                    arg = fields[fieldIdx].decode('unicode-escape' if self.serverVersion >= MIN_SERVER_VER_ENCODE_MSG_ASCII7 else 'UTF-8')
                 except UnicodeDecodeError:
                     arg = fields[fieldIdx].decode('latin-1')
                 logger.debug("arg %s type %s", arg, param.annotation)
@@ -1250,6 +1304,11 @@ class Decoder(Object):
                     arg = int(arg)
                 elif param.annotation is float:
                     arg = float(arg)
+                elif param.annotation is Decimal:
+                    if arg is None or len(arg) == 0:
+                        return UNSET_DECIMAL
+                    else:
+                        return Decimal(arg)
 
                 args.append(arg)
                 fieldIdx += 1
@@ -1287,7 +1346,7 @@ class Decoder(Object):
 
     msgId2handleInfo = {
         IN.TICK_PRICE: HandleInfo(proc=processTickPriceMsg),
-        IN.TICK_SIZE: HandleInfo(wrap=EWrapper.tickSize),
+        IN.TICK_SIZE: HandleInfo(proc=processTickSizeMsg),
         IN.ORDER_STATUS: HandleInfo(proc=processOrderStatusMsg),
         IN.ERR_MSG: HandleInfo(wrap=EWrapper.error),
         IN.OPEN_ORDER: HandleInfo(proc=processOpenOrder),
@@ -1297,7 +1356,7 @@ class Decoder(Object):
         IN.NEXT_VALID_ID: HandleInfo(wrap=EWrapper.nextValidId, ),
         IN.CONTRACT_DATA: HandleInfo(proc=processContractDataMsg),
         IN.EXECUTION_DATA: HandleInfo(proc=processExecutionDataMsg),
-        IN.MARKET_DEPTH: HandleInfo(wrap=EWrapper.updateMktDepth),
+        IN.MARKET_DEPTH: HandleInfo(proc=processMarketDepthMsg),
         IN.MARKET_DEPTH_L2: HandleInfo(proc=processMarketDepthL2Msg),
         IN.NEWS_BULLETINS: HandleInfo(wrap=EWrapper.updateNewsBulletin),
         IN.MANAGED_ACCTS: HandleInfo(wrap=EWrapper.managedAccounts),
@@ -1362,7 +1421,10 @@ class Decoder(Object):
         IN.TICK_BY_TICK: HandleInfo(proc=processTickByTickMsg),
         IN.ORDER_BOUND: HandleInfo(proc=processOrderBoundMsg),
         IN.COMPLETED_ORDER: HandleInfo(proc=processCompletedOrderMsg),
-        IN.COMPLETED_ORDERS_END: HandleInfo(proc=processCompletedOrdersEndMsg)
+        IN.COMPLETED_ORDERS_END: HandleInfo(proc=processCompletedOrdersEndMsg),
+        IN.REPLACE_FA_END: HandleInfo(proc=processReplaceFAEndMsg),
+        IN.WSH_META_DATA: HandleInfo(proc=processWshMetaDataMsg),
+        IN.WSH_EVENT_DATA: HandleInfo(proc=processWshEventDataMsg)
 }
 
 

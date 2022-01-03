@@ -73,6 +73,35 @@ IB_MAX_REQUESTS_PER_SEC = 50
 IB_MAX_REQUESTS_PER_10_MIN = 60
 IB_COMPARISON_PARAMS = [MKTCAP, VOL10DAVG, EV, TTMREVPS, QBVPS, QCSHPS, TTMCFSHR,
                           TTMDIVSHR,TTMGROSMGN, TTMROEPCT, TTMPR2REV, PEEXCLXOR, PRICE2BK]
+
+## Historical cfgs ##
+GET_HISTORICAL_DATA = "hist"
+DURATION_UNITS_KW = "durationUnits"
+DURATION_KW       = "duration"
+
+HIST_VALID_DURATION_UNITS = ["S","D","W","M","W"]
+BARSIZE_SETTING_KW = "barSizeSetting"
+BARS_NUM_KW = "barsNum"
+HIST_VALID_BAR_SIZES      = {"SEC":[1,5,10,15,30],
+                             "MIN":[1,2,3,5,10,15,20,30],
+                             "HOU":[1,2,3,4,8],
+                             "DAY":[1],
+                             "WEEK":[1],
+                             "MON":[1]}
+WHAT_TO_KNOW_KW = "whatToShow"
+HIST_DATA_TYPES = ["TRADES","MIDPOINT","BID","ASK","BID_ASK","ADUJST_LAST","HISTORICAL_VOLATILITY","OPTION_IMPLIED_VOLATILITY","REBATE_RATE","FEE_RATE","YIELD_BID","YIELD_ASK","YIELD_BID_ASK","YIELD_LAST"]
+IBTWS_FUNCTIONS = [GET_FUNDUMENTALS, GET_HISTORICAL_DATA]
+
+## News cfgs ##
+GET_HISTORICAL_NEWS = "hist_news"
+START_DATE_KW = "startDate"
+END_DATE_KW   = "endDate"
+
+GET_NEWS_PROVIDERS = "news_providers"
+
+## Contracts cfgs ##
+GET_CONTRACT_DETAILS = "reqContractDetails"
+
 #################
 
 ### PROCESSED XML FILES POSTFIX ###

@@ -35,8 +35,13 @@ class Ticker_data_c:
 
         def set_raw_statement_by_source(source, raw_data):
             if source == DATA_SOURCES["IB"]:
-                fundametals_Q = raw_data["fundamentals"]["Q_data"]
-                fundametals_K = raw_data["fundamentals"]["K_data"]
+                try:
+                    fundametals_Q = raw_data["fundamentals"]["Q_data"]
+                    fundametals_K = raw_data["fundamentals"]["K_data"]
+                except:
+                    fundametals_Q = raw_data["Q_data"]
+                    fundametals_K = raw_data["K_data"]
+
                 for statement in fundametals_Q:
                     data_obj = base_data_c()
                     name = statement + "_" + cfg.Q
