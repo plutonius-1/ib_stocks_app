@@ -1,4 +1,5 @@
 import os
+from dateutil import parser as date_parser
 from datetime import datetime
 import cfg
 import xml.etree.ElementTree as ET
@@ -97,6 +98,20 @@ def _finditem(obj, key):
             if item is not None:
                 return item
 
+def norm_date(date : str,
+              break_to_seconds = False):
+    """
+    normilze the date given to a specific pattern
+    """
+    # set the pattern # TODO - make sure this is universal - set in CFG?
+    patt = "%Y-%m-%d"
+    if break_to_seconds:
+        patt = "%Y/%m/%d %H:%M:%S"
+
+    parsed_date = date_parser.parse(date)
+    parsed_date = parsed_date.strftime(patt)
+    return parsed_date
+
 def get_date():
     local_time_obj = cfg.time.localtime()
     y = local_time_obj.tm_year
@@ -105,16 +120,24 @@ def get_date():
     return str(y)+"-"+str(m)+"-"+str(d)
 
 def calc_dates_diff(old_date, new_date):
-    d1 = datetime.strptime(old_date, "%Y-%m-%d")
-    d2 = datetime.strptime(new_date, "%Y-%m-%d")
-    assert d2 > d1
-    return abs((d2 - d1).days) // 30
+    """
+    returns the difference between 2 dates in days
+    """
+    norm_old_date = norm_date(old_date)
+    norm_new_date = norm_date(new_date)
+    d1 = datetime.strptime(norm_old_date, "%Y-%m-%d")
+    d2 = datetime.strptime(norm_new_date, "%Y-%m-%d")
+    assert d2 >= d1
+    return abs((d2 - d1).days)
 
-def should_update_object(old_date, new_date, time_threshuld):
+def should_update_object(old_date, new_date, time_threshold_in_days):
+    """
+    return boolean based on if new date is bigger than old date by certien amount of days
+    """
     if (old_date == cfg.DEFAULT_OBJECT_LAST_UPDATE):
         return True
     diff = calc_dates_diff(old_date, new_date)
-    if (diff >= time_threshuld):
+    if (diff >= time_threshold_in_days):
         return True
     return False
 

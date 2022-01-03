@@ -226,33 +226,3 @@ class Sics_handler_c:
         mr = proj_marketReaseach.MarketReasercher()
         mr.update_sic_codes()
         return
-#############################
-# import IbTWS_c
-
-# host1 = "192.168.0.100"
-# dunbros = "10.10.4.107"
-# host3 = "10.1.10.150"
-
-# ib_tws = IbTWS_c.IbTws(host = host1, port = 7496, clientId = 10)
-# run_thread = threading.Thread(target = ib_tws.run)
-# run_thread.start()
-
-# proj_utils.print_sleep_msg(5)
-
-# sic_handler = Sics_handler_c(ib_tws)
-
-# sic_handler.clear_existsing_dic()
-# proj_utils.print_sleep_msg(5)
-
-# # sic_handler.update_local_sic_dict_by_sic(2100)
-# # sic_handler.analyze_industry(2100)
-# sics_df = pd.read_pickle(cfg.SIC_CODES_PATH) # all SICS from SEC
-# for sic_code in sics_df["SIC Code"][:100]:
-    # sic_code = str(sic_code)
-    # sic_handler.update_local_sic_dict_by_sic(sic_code)
-    # sic_handler.analyze_industry(str(sic_code))
-
-# # proj_utils.print_sleep_msg(5)
-# # sic_handler.analyze_sic_tickers(2100)
-
-# ib_tws.disconnect()
