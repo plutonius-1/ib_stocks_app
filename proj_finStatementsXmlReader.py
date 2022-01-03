@@ -92,6 +92,13 @@ class finStatementsXmlReader_c:
         assert ticker != None, "could not found ticker info in XML file"
         return str(ticker)
 
+    def try_get_processed_fund_data(self, ticker : str):
+        pkl_path = cfg.IB_PROCESSED_PATH+ticker.upper()+"/"+ticker.upper()+cfg.PROCESSED_FUNDAMENTAL_XML+".pkl"
+        print(f"PKL_PATH = {pkl_path}")
+        if (cfg.os.path.exists(pkl_path)):
+            return pd.read_pickle(pkl_path)
+        return None
+
     #### PRIVATE ####
 
     def _raise_err(self,
