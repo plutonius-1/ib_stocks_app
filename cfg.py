@@ -131,6 +131,8 @@ SNAPSHOT     = "snapshot"
 ANALYZE = "analyze"
 Q       = "Q"
 K       = "K"
+Q_data  = "Q_data"
+K_data  = "K_data"
 
 INCOME_NAME = "INC"
 BALACNE_NAME = "BAL"

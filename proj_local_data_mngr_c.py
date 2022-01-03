@@ -45,8 +45,12 @@ class localDataMngr_c:
 
         # get the processed fund data as {"Q_data" : data, K_data : data}
         Q_K_dict = pd.read_pickle(processed_raw_data_path)
-        Q_data   = Q_K_dict["Q_data"]
-        K_data   = Q_K_dict["K_data"]
+        Q_data   = Q_K_dict[Q_data]
+        K_data   = Q_K_dict[K_data]
 
+        CONT HERE
 
+        return
+
+    def add_entry_to_existing_processed_raw_data(self, new_entry : dict):
         return
