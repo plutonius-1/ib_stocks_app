@@ -20,9 +20,12 @@ LAST_UPDATED = "last_updated"
 TICKERS = "tickers"
 
 ### PATHS ###
-DATA_PATH           = "./data/"
+#DATA_PATH           = "./data/"
+# DATA_PATH           = "/mnt/c/Users/avsha/Documents/python_envs/IB/ib_stocks_app/data/"
+DATA_PATH           = "../../IB/ib_stocks_app/data/"
 
 RAW_DATA_PATH       = DATA_PATH + "raw_data/"
+BAR_DATA_PATH       = DATA_PATH + "bar_data/"
 PROCESSED_DATA_PATH = DATA_PATH + "processed_raw_data/"
 COMPANY_ANALYSIS_PATH = DATA_PATH + "companies_analysis/"
 MARKET_RESEARCH_PATH  = DATA_PATH + "market_research/"
@@ -33,6 +36,8 @@ IB_REQUEST_HISTORY_PATH = "./ib_req_histroy.pkl"
 IB_DATA_PATH       = RAW_DATA_PATH + "ib_data/"
 IB_PROCESSED_PATH  = PROCESSED_DATA_PATH + "ib_data/"
 IB_FINANCIALS_PATH = IB_DATA_PATH
+IB_BAR_DATA_PATH   = BAR_DATA_PATH + "ib_data/"
+
 
 SICS_DIR_PATH = "./SICS/"
 BASIC_APP_STURCTURE_DIRS = [RAW_DATA_PATH, PROCESSED_DATA_PATH, COMPANY_ANALYSIS_PATH, MARKET_RESEARCH_PATH, DEEP_COMPERATIVE_PATH, IB_DATA_PATH, IB_PROCESSED_PATH, SICS_DIR_PATH]
@@ -119,6 +124,8 @@ PROCESSED_SNAPSHOT_XML    = "_processed_snapshot"
 PROCESSED_FINSUMMERY_XML  = "_processed_finsummery"
 PROCESSED_OVERVIEW_XML    = "_processed_overview"
 
+BARS_DATA_POSTFIX = "_bars_data"
+
 ### GENERAL ###
 FUNDAMENTALS = "fundamentals"
 SNAPSHOT     = "snapshot"
@@ -145,6 +152,11 @@ DEFAULT_OBJECT_LAST_UPDATE = "0000-00-00"
 DEFAULT_IB_REQ_HISTORY_DICT = {"LAST_REQ_TIME":None,
                                "REQS":IB_MAX_REQUESTS_PER_10_MIN}
 
+QUARTERLY_MIN_TIME_FOR_UPDATE = 91
+YEARLY_MIN_TIME_FOR_UPDATE    = 360
+
 SOURCES_COMPER_PARAMS = {
     IB : IB_COMPARISON_PARAMS
 }
+
+

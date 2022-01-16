@@ -155,14 +155,6 @@ def get_company_cik(ticker : str):
     assert(len(results) > 0 ), "MarketReasercher - Did not find the CIK for {}".format(ticker)
     return str(results[0])
 
-def add_entry_to_processed_raw_data(existing_raw_processed_data : dict,
-                                    new_entry):
-    assert len(existing_raw_processed_data.keys()) = 1 and (cfg.Q_data in existing_raw_processed_data.keys() or cfg.K_data in existing_raw_processed_data.keys()),
-    f"{__name__} : got bad file/dict as existing_raw_processed_data \nexpected keys are: Q_data or K_data\ngot keys{existing_raw_processed_data.keys()}"
-
-    # TODO make changes to assert the file type to Func_data... type
-    CONT HERE
-
 
 
 

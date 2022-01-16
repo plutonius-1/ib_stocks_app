@@ -54,7 +54,7 @@ class finStatementsXmlReader_c:
     def prase_data(self):
         try:
             self._map_dic = self._get_dic_mapping_element(self.xml_master_root)
-            Q_data,  K_data = self._prase_comp_data(self.xml_master_root, self._map_dic)
+            Q_data,  K_data = self.prase_comp_data(self.xml_master_root, self._map_dic)
             self._BAL_Q = Q_data["BAL"]
             self._CAS_Q = Q_data["CAS"]
             self._INC_Q = Q_data["INC"]
@@ -76,6 +76,12 @@ class finStatementsXmlReader_c:
         with open(name + '.pkl', 'wb') as f:
             pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
 
+    def save_fund_obj(self, ticker : str, fund_obj : dict):
+        name = ticker.upper() + cfg.PROCESSED_FUNDAMENTAL_XML
+        path = cfg.IB_PROCESSED_PATH + ticker.upper() + "/"
+        proj_utils.check_dir_exists(path)
+        self.save_obj(fund_obj, path + name)
+
     def load_obj(self, name ):
         with open(name + '.pkl', 'rb') as f:
             return pickle.load(f)
@@ -94,7 +100,6 @@ class finStatementsXmlReader_c:
 
     def try_get_processed_fund_data(self, ticker : str):
         pkl_path = cfg.IB_PROCESSED_PATH+ticker.upper()+"/"+ticker.upper()+cfg.PROCESSED_FUNDAMENTAL_XML+".pkl"
-        print(f"PKL_PATH = {pkl_path}")
         if (cfg.os.path.exists(pkl_path)):
             return pd.read_pickle(pkl_path)
         return None
@@ -180,7 +185,7 @@ class finStatementsXmlReader_c:
         return res
 
 
-    def _prase_comp_data(self,
+    def prase_comp_data(self,
                          xml_root,
                          mapping_dic):
         """
@@ -265,13 +270,3 @@ class finStatementsXmlReader_c:
         return parsed_data_Q, parsed_data_K
 
 
-# temp_c = finStatementsXmlReader()
-# temp_c.set_xml_master_root("items_aapl.xml")
-# temp_c.prase_data()
-# root = temp_c.xml_master_root
-# for i in root.find("FinancialStatements/InterimPeriods/FiscalPeriod/Statement"):
-#     print(i.tag, i.attrib)
-#yealy_kesy = temp_c._INC_K["2020-12-31"].keys()
-#q_keys = temp_c._INC_Q["2020-12-31"].keys()
-# for i in temp_c._BAL_Q["2020-12-31"].keys():
-#     print(i)

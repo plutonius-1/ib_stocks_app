@@ -21,6 +21,7 @@ from dateutil import parser as datetime_parser
 from ibapi.account_summary_tags import *
 import proj_req_id_handler_c
 import proj_utils
+import proj_BarData_c
 
 class TestClient(EClient):
     def __init__(self, wrapper):
@@ -91,9 +92,11 @@ class IbTws(TestWrapper,
         self.port = kwargs[self.PORT_KEY]
         self.clientId = kwargs[self.CLIENT_ID]
 
-        # some init assertions ##
-        # assert self.function != None
-        # assert self.function in cfg.IBTWS_FUNCTIONS
+        #========================
+        # Field: _temp_bars_data_obj
+        # Description - used for hold a temp BarsData object
+        self._temp_bars_data_obj = None
+
         # connetion assertion
         assert self.connectToTWS(self.host, self.port, self.clientId), "*** Exit: TWS not connected ***"
 
@@ -166,6 +169,8 @@ class IbTws(TestWrapper,
                                         "Y" : datetime.timedelta(weeks=(int(duration) * 52))}
             queryTime = (datetime.datetime.today() - durationUnits_time_delta[durationUnits]).strftime("%Y%m%d %H:%M:%S")
 
+            whatToShow = kwargs[cfg.WHAT_TO_KNOW_KW]
+
             # Bars Processing #
             barsNum      = kwargs[cfg.BARS_NUM_KW]
             barSizeUnits = kwargs[cfg.BARSIZE_SETTING_KW]
@@ -175,6 +180,11 @@ class IbTws(TestWrapper,
 
 
             reqIds = [self.id_handler.register_outgoing_req(historical = True)]
+
+            # start a temp histrocial object
+            self._temp_bars_data_obj = proj_BarData_c.bars_data_objects_by_type[whatToShow]
+            self._temp_bars_data_obj.set_ticker(ticker)
+
             super().reqHistoricalData(
                 reqId = reqIds[0],
                 contract = contract,
@@ -259,10 +269,22 @@ class IbTws(TestWrapper,
         open("scanner.xml", "w").write(xml)
         print("ScannerParameters recived")
 
-    ### Historical ###
+    #====================================
+    ### Historical Data Overrides ###
     def historicalData(self, reqId:int, bar: BarData):
-        print("HistoricalData. ReqId:", reqId, "BarData.", bar)
+        print(f'{__name__}: got historical data for ReqId {reqId}, \n{bar}')
+        tmp_bar_data = proj_BarData_c.Bar_data_c(bar)
+        self._temp_bars_data_obj.add_bar_data(tmp_bar_data)
 
+    def historicalDataEnd(self, reqId : int, start : str, end : str):
+        print(f'{__name__}: finished getting bars ')
+        assert self._temp_bars_data_obj is not None
+
+        print(f'{__name__}: object_bars lenth = {len(self._temp_bars_data_obj.get_bars_data())}')
+        self._temp_bars_data_obj.save_bars_data()
+        self._temp_bars_data_obj = None
+
+    #====================================
     ### News overrides ###
     def reqNewsProviders(self):
         super().reqNewsProviders()
@@ -348,7 +370,9 @@ class IbTws(TestWrapper,
             self.connect(host, port, clientId)
         except:
             pass
-
+        # while (not self.isConnected()):
+            # cfg.time.sleep(1)
+            # print(f"{__name__} : Sleeping while ibapi is connectin")
         if not self.isConnected():
             print("IbTws_c is not connected")
             return False
